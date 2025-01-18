@@ -7,8 +7,12 @@
     "type": "git",
     "url": "https://github.com/Cwooper/kpl-linter"
   },
-  "icon": "images/icon.png",
-  "keywords": ["kpl", "kernel programming language", "syntax highlighting"],
+  "icon": "icons/extension-icon.png",
+  "keywords": [
+    "kpl",
+    "kernel programming language",
+    "syntax highlighting"
+  ],
   "engines": {
     "vscode": "^1.96.0"
   },
@@ -16,16 +20,22 @@
     "Programming Languages"
   ],
   "contributes": {
-    "languages": [{
-      "id": "kpl",
-      "aliases": ["Kernel Programming Language", "kpl"],
-      "extensions": [".k",".h"],
-      "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-      "language": "kpl",
-      "scopeName": "source.kpl",
-      "path": "./syntaxes/kpl.tmLanguage.json"
-    }]
+    "languages": [
+      {
+        "id": "kpl",
+        "aliases": [
+          "Kernel Programming Language",
+          "kpl"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "kpl",
+        "scopeName": "source.kpl",
+        "path": "./syntaxes/kpl.tmLanguage.json"
+      }
+    ]
   }
 }
