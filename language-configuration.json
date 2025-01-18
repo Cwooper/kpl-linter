@@ -27,5 +27,11 @@
     "increaseIndentPattern": "^\\s*(code|header|interface|class|behavior|function|method|if|else|elseIf|while|for|switch|case|default|try|catch|do|record|enum|fields|messages|methods)\\b(?!.*(end(Code|Header|Interface|Class|Behavior|Function|Method|If|While|For|Switch|Try|Record))\\b)",
     "decreaseIndentPattern": "^\\s*(end(Code|Header|Interface|Class|Behavior|Function|Method|If|While|For|Switch|Try|Record)|until)\\b",
     "indentNextLinePattern": "^\\s*(else|elseIf|catch|case|default)\\b"
+  },
+  "folding": {
+    "markers": {
+      "start": "^\\s*(code|header|interface|class|behavior|function|method|if|while|for|switch|try|do|record)\\b",
+      "end": "^\\s*(end(Code|Header|Interface|Class|Behavior|Function|Method|If|While|For|Switch|Try|Record)|until)\\b"
+    }
   }
 }

@@ -44,7 +44,7 @@
         },
         {
           "name": "keyword.typecheck.kpl",
-          "match": "\\b(asInteger|asPtrTo|arraySize|isInstanceOf|isKindOf)\\b"
+          "match": "\\b(asInteger|arraySize|isInstanceOf|isKindOf)\\b"
         },
         {
           "name": "storage.type.kpl",
@@ -64,7 +64,7 @@
         },
         {
           "name": "support.connector.kpl",
-          "match": "\\b(of|to|by|returns)\\b"
+          "match": "\\b(of|to|by|asPtrTo|returns)\\b"
         }
       ]
     },
