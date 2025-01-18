@@ -42,6 +42,10 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Release Notes
 
+### 0.0.2
+
+Fixed package extensions
+
 ### 0.0.1
 
 Initial release of KPL Language Support:
