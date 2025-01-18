@@ -3,11 +3,12 @@
   "displayName": "kpl-linter",
   "description": "KPL Linting and Syntax Highlighting",
   "version": "0.0.1",
+  "publisher": "CwooperDev",
   "repository": {
     "type": "git",
     "url": "https://github.com/Cwooper/kpl-linter"
   },
-  "icon": "icons/extension-icon.png",
+  "icon": "assets/extension-icon.png",
   "keywords": [
     "kpl",
     "kernel programming language",
