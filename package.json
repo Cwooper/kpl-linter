@@ -3,6 +3,12 @@
   "displayName": "kpl-linter",
   "description": "KPL Linting and Syntax Highlighting",
   "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Cwooper/kpl-linter"
+  },
+  "icon": "images/icon.png",
+  "keywords": ["kpl", "kernel programming language", "syntax highlighting"],
   "engines": {
     "vscode": "^1.96.0"
   },
