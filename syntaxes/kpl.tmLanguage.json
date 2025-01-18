@@ -32,23 +32,39 @@
       "patterns": [
         {
           "name": "keyword.control.kpl",
-          "match": "\\b(if|else|elseIf|while|for|do|until|break|continue|return|switch|case|default|endSwitch|try|catch)\\b"
+          "match": "\\b(if|else|elseIf|while|for|do|until|break|continue|return|switch|case|default|try|catch|throw)\\b"
         },
         {
           "name": "keyword.control.end.kpl",
           "match": "\\b(endIf|endWhile|endFor|endSwitch|endTry)\\b"
         },
         {
+          "name": "keyword.memory.kpl",
+          "match": "\\b(alloc|new|free|sizeOf)\\b"
+        },
+        {
+          "name": "keyword.typecheck.kpl",
+          "match": "\\b(asInteger|asPtrTo|arraySize|isInstanceOf|isKindOf)\\b"
+        },
+        {
           "name": "storage.type.kpl",
-          "match": "\\b(code|class|interface|behavior|fields|superclass|function|method|enum|record|var|const)\\b"
+          "match": "\\b(code|class|interface|behavior|superclass|function|method|enum|record|var|const)\\b"
+        },
+        {
+          "name": "storage.type.section.kpl",
+          "match": "\\b(messages|methods|header|functions|fields|errors|type)\\b"
         },
         {
           "name": "storage.type.end.kpl",
-          "match": "\\b(endCode|endClass|endInterface|endBehavior|endFunction|endMethod|endRecord)\\b"
+          "match": "\\b(endCode|endClass|endHeader|endInterface|endBehavior|endFunction|endMethod|endRecord)\\b"
         },
         {
           "name": "storage.modifier.kpl",
           "match": "\\b(external|extends|implements|infix|prefix|uses|renaming)\\b"
+        },
+        {
+          "name": "support.connector.kpl",
+          "match": "\\b(of|to|by|returns)\\b"
         }
       ]
     },

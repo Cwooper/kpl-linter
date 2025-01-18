@@ -1,9 +1,18 @@
 # Change Log
 
-All notable changes to the "kpl-linter" extension will be documented in this file.
+All notable changes to the KPL Language Support extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+## [0.0.1] - 2025-01-18
 
-## [Unreleased]
-
-- Initial release
+### Added
+- Initial syntax highlighting support
+- Basic language configuration
+  - Comment toggling
+  - Bracket matching
+  - Auto-closing pairs
+  - Code block detection
+- Smart indentation for:
+  - Code blocks
+  - Class definitions
+  - Function definitions
+  - Control structures
