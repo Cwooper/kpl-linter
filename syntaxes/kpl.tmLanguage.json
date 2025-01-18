@@ -48,7 +48,7 @@
       "patterns": [
         {
           "name": "storage.type.builtin.kpl",
-          "match": "\\b(int|char|bool|double|void|typeOfNull|anyType)\\b"
+          "match": "\\b(array|int|char|bool|double|void|typeOfNull|anyType)\\b"
         },
         {
           "name": "storage.type.pointer.kpl",
@@ -68,7 +68,7 @@
         },
         {
           "name": "keyword.operator.comparison.kpl",
-          "match": "==|!=|<|<=|>|>="
+          "match": "==|!=|<|>|<=|>="
         },
         {
           "name": "keyword.operator.logical.kpl",
