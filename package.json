@@ -1,0 +1,25 @@
+{
+  "name": "kpl-linter",
+  "displayName": "kpl-linter",
+  "description": "KPL Linting and Syntax Highlighting",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "kpl",
+      "aliases": ["Kernel Programming Language", "kpl"],
+      "extensions": [".k",".h"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "kpl",
+      "scopeName": "source.kpl",
+      "path": "./syntaxes/kpl.tmLanguage.json"
+    }]
+  }
+}

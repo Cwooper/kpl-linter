@@ -1,0 +1,31 @@
+{
+    "comments": {
+        "lineComment": "--",
+        "blockComment": ["/*", "*/"]
+    },
+    "brackets": [
+        ["{", "}"],
+        ["[", "]"],
+        ["(", ")"]
+    ],
+    "autoClosingPairs": [
+        { "open": "{", "close": "}" },
+        { "open": "[", "close": "]" },
+        { "open": "(", "close": ")" },
+        { "open": "\"", "close": "\"", "notIn": ["string", "comment"] },
+        { "open": "'", "close": "'", "notIn": ["string", "comment"] }
+    ],
+    "surroundingPairs": [
+        ["{", "}"],
+        ["[", "]"],
+        ["(", ")"],
+        ["\"", "\""],
+        ["'", "'"]
+    ],
+    "wordPattern": "(-?\\d*\\.\\d+)|([a-zA-Z_][a-zA-Z_0-9]*)|(\\d+)",
+    "indentationRules": {
+        "increaseIndentPattern": "^\\s*(code|header|interface|class|behavior|function|method|if|else|elseIf|while|for|switch|try|catch|do)\\b(?!.*(end(code|header|interface|class|behavior|function|method|if|while|for|switch|try|catch|do))))",
+        "decreaseIndentPattern": "^\\s*(end(code|header|interface|class|behavior|function|method|if|while|for|switch|try|catch|do))\\b",
+        "indentNextLinePattern": "^\\s*(else|elseIf|catch)\\b"
+    }
+}
