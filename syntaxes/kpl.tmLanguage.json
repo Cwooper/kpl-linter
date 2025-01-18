@@ -32,11 +32,19 @@
       "patterns": [
         {
           "name": "keyword.control.kpl",
-          "match": "\\b(if|else|elseIf|endIf|while|endWhile|for|endFor|do|until|break|continue|return|switch|case|default|endSwitch|try|catch|endTry)\\b"
+          "match": "\\b(if|else|elseIf|while|for|do|until|break|continue|return|switch|case|default|endSwitch|try|catch)\\b"
+        },
+        {
+          "name": "keyword.control.end.kpl",
+          "match": "\\b(endIf|endWhile|endFor|endSwitch|endTry)\\b"
         },
         {
           "name": "storage.type.kpl",
-          "match": "\\b(code|class|interface|behavior|function|method|enum|record|var|const)\\b"
+          "match": "\\b(code|class|interface|behavior|fields|superclass|function|method|enum|record|var|const)\\b"
+        },
+        {
+          "name": "storage.type.end.kpl",
+          "match": "\\b(endCode|endClass|endInterface|endBehavior|endFunction|endMethod|endRecord)\\b"
         },
         {
           "name": "storage.modifier.kpl",
