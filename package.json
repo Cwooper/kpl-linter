@@ -28,6 +28,11 @@
           "Kernel Programming Language",
           "kpl"
         ],
+        "extensions": [
+          ".kpl",
+          ".k",
+          ".h"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],
