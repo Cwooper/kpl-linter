@@ -1,6 +1,11 @@
 # Change Log
 
-All notable changes to the KPL Language Support extension will be documented in this file.
+All notable changes to the KPL Language Support extension will be documented in
+this file.
+
+## [0.0.4] - 2025-01-21
+
+Added CI/CD for faster development and deployment
 
 ## [0.0.4] - 2025-01-21
 

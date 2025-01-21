@@ -42,6 +42,10 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Release Notes
 
+### 0.0.5
+
+Added CI/CD for faster development
+
 ### 0.0.4
 
 Added Blitz Assembly formatter with support for:
