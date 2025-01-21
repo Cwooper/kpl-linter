@@ -42,6 +42,10 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Release Notes
 
+### 0.0.3
+
+Added Blitz Assembly support with syntax highlighting, smart indentation, and more.
+
 ### 0.0.2
 
 Fixed package extensions

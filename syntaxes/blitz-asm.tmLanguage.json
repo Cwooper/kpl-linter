@@ -1,0 +1,194 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Blitz Assembly",
+  "scopeName": "source.blitz-asm",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#labels" },
+    { "include": "#directives" },
+    { "include": "#registers" },
+    { "include": "#instructions" },
+    { "include": "#strings" },
+    { "include": "#constants" },
+    { "include": "#operators" },
+    { "include": "#memoryAccess" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.section.blitz-asm",
+          "match": "!\\s*={2,}\\s*[A-Za-z0-9_]+\\s*={2,}\\s*$"
+        },
+        {
+          "name": "comment.line.exclamation.blitz-asm",
+          "match": "!.*$"
+        }
+      ]
+    },
+    "labels": {
+      "patterns": [
+        {
+          "name": "entity.name.function.local-label.blitz-asm",
+          "match": "_[A-Za-z0-9_]+(?=:)"
+        },
+        {
+          "name": "entity.name.function.label.blitz-asm",
+          "match": "^[A-Za-z][A-Za-z0-9_]*(?=:)"
+        },
+        {
+          "name": "entity.name.function.label-ref.blitz-asm",
+          "match": "\\b_[A-Za-z0-9_]+\\b(?!:)"
+        }
+      ]
+    },
+    "directives": {
+      "patterns": [
+        {
+          "name": "keyword.control.directive.data.blitz-asm",
+          "match": "\\.(word|align|ascii)\\b"
+        },
+        {
+          "name": "keyword.control.directive.section.blitz-asm",
+          "match": "\\.(text|data)\\b"
+        },
+        {
+          "name": "keyword.control.directive.linkage.blitz-asm",
+          "match": "\\.(export|import)\\b"
+        },
+        {
+          "name": "keyword.operator.assignment.blitz-asm",
+          "match": "="
+        }
+      ]
+    },
+    "registers": {
+      "patterns": [
+        {
+          "name": "variable.language.register.special.blitz-asm",
+          "match": "\\b(fp|sp)\\b"
+        },
+        {
+          "name": "variable.language.register.general.blitz-asm",
+          "match": "\\br(?:1[0-5]|[0-9])\\b"
+        },
+        {
+          "name": "variable.language.register.float.blitz-asm",
+          "match": "\\bf[0-9]+\\b"
+        }
+      ]
+    },
+    "instructions": {
+      "patterns": [
+        {
+          "name": "keyword.control.instruction.arithmetic.blitz-asm",
+          "match": "\\b(add|sub|mul|div|rem|sll|srl|sra|cmp|mov)\\b"
+        },
+        {
+          "name": "keyword.control.instruction.logical.blitz-asm",
+          "match": "\\b(and|or|xor|andn)\\b"
+        },
+        {
+          "name": "keyword.control.instruction.memory.blitz-asm",
+          "match": "\\b(load|loadb|loadv|loadbv|store|storeb|storev|storebv|push|pop)\\b"
+        },
+        {
+          "name": "keyword.control.instruction.branch.blitz-asm",
+          "match": "\\b(call|jmp|be|bne|bl|ble|bg|bge|bvs|bvc|bns|bnc|bss|bsc|bis|bic|bps|bpc)\\b"
+        },
+        {
+          "name": "keyword.control.instruction.system.blitz-asm",
+          "match": "\\b(nop|wait|debug|debug2|syscall|ret|reti|tset)\\b"
+        },
+        {
+          "name": "keyword.control.instruction.control.blitz-asm",
+          "match": "\\b(seti|cleari|setp|clearp|sets|clears)\\b"
+        },
+        {
+          "name": "keyword.control.instruction.special.blitz-asm",
+          "match": "\\b(set|sethi|setlo|ldaddr|readu|writeu|ldptbr|ldptlr)\\b"
+        },
+        {
+          "name": "keyword.control.instruction.floating.blitz-asm",
+          "match": "\\b(ftoi|itof|fadd|fsub|fmul|fdiv|fcmp|fsqrt|fneg|fabs|fload|fstore)\\b"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.blitz-asm",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.blitz-asm",
+              "match": "\\\\([rntx\"\\\\]|x[0-9A-Fa-f]{2}|0)"
+            }
+          ]
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.numeric.hex.blitz-asm",
+          "match": "\\b0x[0-9A-Fa-f]+\\b"
+        },
+        {
+          "name": "constant.numeric.decimal.blitz-asm",
+          "match": "\\b\\d+\\b"
+        },
+        {
+          "name": "constant.other.symbol.blitz-asm",
+          "match": "\\b[A-Z][A-Z0-9_]*\\b"
+        }
+      ]
+    },
+    "memoryAccess": {
+      "patterns": [
+        {
+          "name": "meta.memory.indexed.blitz-asm",
+          "match": "\\[(r\\d+|fp|sp)\\s*([+-])\\s*(\\d+)\\]",
+          "captures": {
+            "1": { "name": "variable.language.register.blitz-asm" },
+            "2": { "name": "keyword.operator.arithmetic.blitz-asm" },
+            "3": { "name": "constant.numeric.decimal.blitz-asm" }
+          }
+        },
+        {
+          "name": "meta.memory.pre-increment.blitz-asm",
+          "match": "\\[(--)(\\s*r\\d+|fp|sp)\\]",
+          "captures": {
+            "1": { "name": "keyword.operator.arithmetic.blitz-asm" },
+            "2": { "name": "variable.language.register.blitz-asm" }
+          }
+        },
+        {
+          "name": "meta.memory.post-increment.blitz-asm",
+          "match": "\\[(r\\d+|fp|sp)(\\s*\\+\\+)\\]",
+          "captures": {
+            "1": { "name": "variable.language.register.blitz-asm" },
+            "2": { "name": "keyword.operator.arithmetic.blitz-asm" }
+          }
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.arithmetic.blitz-asm",
+          "match": "[\\+\\-\\*\\/]"
+        },
+        {
+          "name": "keyword.operator.shift.blitz-asm",
+          "match": "<<|>>"
+        },
+        {
+          "name": "keyword.operator.bitwise.blitz-asm",
+          "match": "[\\|\\&\\^]"
+        }
+      ]
+    }
+  }
+}
