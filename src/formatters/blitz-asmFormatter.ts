@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { FormattingRules } from "../utils/formattingRules";
+import { FormattingRules } from "../utils/blitz-asmRules";
 
 export class BlitzFormatter implements vscode.DocumentFormattingEditProvider {
   private rules: FormattingRules;

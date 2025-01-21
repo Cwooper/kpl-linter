@@ -1,7 +1,6 @@
 export class FormattingRules {
   private readonly TAB_SIZE = 8;
   private readonly COMMENT_COLUMN = 49; // 1-indexed
-  private readonly COMMENT_TAB_POSITION = 6; // Number of tabs from start for comments
 
   private stripComment(line: string): { code: string; comment: string | null } {
     let inString = false;
