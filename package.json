@@ -43,7 +43,7 @@
         "configuration": "./language-configuration-kpl.json"
       },
       {
-        "id": "blitz-assembly",
+        "id": "blitz-asm",
         "aliases": [
           "blitz-asm",
           "Blitz Assembly"
@@ -61,11 +61,16 @@
         "path": "./syntaxes/kpl.tmLanguage.json"
       },
       {
-        "language": "blitz-assembly",
+        "language": "blitz-asm",
         "scopeName": "source.blitz-asm",
         "path": "./syntaxes/blitz-asm.tmLanguage.json"
       }
-    ]
+    ],
+    "configurationDefaults": {
+      "[blitz-asm]": {
+        "editor.tabSize": 8
+      }
+    }
   },
   "main": "./out/extension.js",
   "scripts": {
