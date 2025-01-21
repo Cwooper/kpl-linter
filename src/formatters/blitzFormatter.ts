@@ -14,20 +14,35 @@ export class BlitzFormatter implements vscode.DocumentFormattingEditProvider {
   ): vscode.TextEdit[] {
     const edits: vscode.TextEdit[] = [];
     const text = document.getText();
-    const lines = text.split(/\r?\n/);
+    const originalLines = text.split(/\r?\n/);
 
-    for (let i = 0; i < lines.length; i++) {
-      const currentLine = lines[i];
-      const formattedLine = this.rules.formatLine(currentLine);
+    // First pass: collect all the formatted lines and their mappings
+    let currentLine = 0;
+    const formattedLines: string[] = [];
+    const lineMap: Map<number, number> = new Map(); // Maps original line to formatted line number
 
-      // Only create an edit if the line changed
-      if (formattedLine !== currentLine) {
-        const range = new vscode.Range(
-          new vscode.Position(i, 0),
-          new vscode.Position(i, currentLine.length)
-        );
-        edits.push(vscode.TextEdit.replace(range, formattedLine));
+    for (let i = 0; i < originalLines.length; i++) {
+      const line = originalLines[i];
+      const formattedResult = this.rules.formatLine(line);
+      const resultArray = Array.isArray(formattedResult)
+        ? formattedResult
+        : [formattedResult];
+
+      lineMap.set(i, currentLine);
+      for (const formattedLine of resultArray) {
+        formattedLines.push(formattedLine);
+        currentLine++;
       }
+    }
+
+    // Second pass: create edits by comparing original to formatted
+    if (formattedLines.join("\n") !== originalLines.join("\n")) {
+      // Create a single edit for the entire document
+      const fullRange = new vscode.Range(
+        new vscode.Position(0, 0),
+        new vscode.Position(originalLines.length, 0)
+      );
+      edits.push(vscode.TextEdit.replace(fullRange, formattedLines.join("\n")));
     }
 
     return edits;

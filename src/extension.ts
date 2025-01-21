@@ -6,16 +6,16 @@ export function activate(context: vscode.ExtensionContext) {
     const blitzFormatter = new BlitzFormatter();
     context.subscriptions.push(
         vscode.languages.registerDocumentFormattingEditProvider(
-            'blitz-assembly',
+            'blitz-asm',
             blitzFormatter
         )
     );
 
-    // Add command for manual formatting
+    // Command for manual formatting
     context.subscriptions.push(
         vscode.commands.registerCommand('kpl-linter.formatBlitzAssembly', () => {
             const editor = vscode.window.activeTextEditor;
-            if (editor && editor.document.languageId === 'blitz-assembly') {
+            if (editor && editor.document.languageId === 'blitz-asm') {
                 vscode.commands.executeCommand('editor.action.formatDocument');
             }
         })
