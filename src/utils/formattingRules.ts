@@ -1,4 +1,8 @@
 export class FormattingRules {
+  private readonly TAB_SIZE = 8;
+  private readonly COMMENT_COLUMN = 49; // 1-indexed
+  private readonly COMMENT_TAB_POSITION = 6; // Number of tabs from start for comments
+
   private stripComment(line: string): { code: string; comment: string | null } {
     let inString = false;
     let stringChar: string | null = null;
@@ -27,14 +31,57 @@ export class FormattingRules {
     return { code: line.trimEnd(), comment: null };
   }
 
+  private calculateTabsNeeded(currentPos: number, targetCol: number): number {
+    const remainingSpaces = targetCol - currentPos;
+    if (remainingSpaces <= 0) return 1; // At least one tab/space separator
+
+    // Calculate how many tabs we need to get to or past the target column
+    let tabsNeeded = Math.ceil(remainingSpaces / this.TAB_SIZE);
+
+    // If adding these tabs would put us too far past the target, reduce by one
+    while (tabsNeeded > 1) {
+      const posWithTabs = currentPos + tabsNeeded * this.TAB_SIZE;
+      if (posWithTabs <= targetCol + this.TAB_SIZE) break;
+      tabsNeeded--;
+    }
+
+    return tabsNeeded;
+  }
+
+  private getEffectiveLength(str: string): number {
+    let length = 0;
+    for (let i = 0; i < str.length; i++) {
+      if (str[i] === "\t") {
+        // Move to the next tab stop
+        length = Math.ceil((length + 1) / this.TAB_SIZE) * this.TAB_SIZE;
+      } else {
+        length++;
+      }
+    }
+    return length;
+  }
+
+  private alignComment(code: string, comment: string): string {
+    const effectiveLength = this.getEffectiveLength(code);
+
+    // If we're already past the comment column, just add one space
+    if (effectiveLength >= this.COMMENT_COLUMN - 1) {
+      return code + " " + comment;
+    }
+
+    // Calculate tabs needed to reach the comment column
+    const tabsNeeded = this.calculateTabsNeeded(
+      effectiveLength,
+      this.COMMENT_COLUMN - 1
+    );
+    return code + "\t".repeat(tabsNeeded) + comment;
+  }
+
   private isLabelLine(code: string): boolean {
     let inString = false;
     let stringChar: string | null = null;
 
-    // Handle empty strings
-    if (code.length === 0) {
-      return false;
-    }
+    if (code.length === 0) return false;
 
     for (let i = 0; i < code.length; i++) {
       const char = code[i];
@@ -49,7 +96,6 @@ export class FormattingRules {
         }
       }
 
-      // Only consider it a label if the colon is at the end and not in a string
       if (char === ":" && !inString && i === code.length - 1) {
         return true;
       }
@@ -79,16 +125,14 @@ export class FormattingRules {
 
     // First check if this is a pure label line (no content after the colon)
     if (this.isLabelLine(cleanCode)) {
-      return cleanCode + (comment ? " " + comment : "");
+      return comment ? this.alignComment(cleanCode, comment) : cleanCode;
     }
 
     // Now check if there's content after a label
     const colonIndex = cleanCode.indexOf(":");
     if (colonIndex !== -1) {
-      // Check if the colon is part of a label (not in a string and has content after it)
       let inString = false;
       let stringChar: string | null = null;
-      let isLabelColon = true;
 
       for (let i = 0; i < colonIndex; i++) {
         const char = cleanCode[i];
@@ -104,19 +148,23 @@ export class FormattingRules {
       }
 
       if (!inString && colonIndex < cleanCode.length - 1) {
-        // This is a label with content after it
         const label = cleanCode.substring(0, colonIndex + 1);
         const remainder = cleanCode.substring(colonIndex + 1).trim();
 
         if (remainder.length > 0) {
-          return [label, "\t" + remainder + (comment ? "\t" + comment : "")];
+          // Format both lines with proper comment alignment if needed
+          if (comment) {
+            const secondLine = "\t" + remainder;
+            return [label, this.alignComment(secondLine, comment)];
+          }
+          return [label, "\t" + remainder];
         }
       }
     }
 
     // Handle regular instructions
     const formattedLine = "\t" + cleanCode;
-    return formattedLine + (comment ? "\t" + comment : "");
+    return comment ? this.alignComment(formattedLine, comment) : formattedLine;
   }
 
   public formatLines(lines: string[]): string[] {
