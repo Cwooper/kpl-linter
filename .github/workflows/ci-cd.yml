@@ -1,0 +1,37 @@
+name: CI/CD for kpl-linter VS Code extension
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Node.js environment
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Step 4: Package the extension
+      - name: Package extension
+        run: npm run package
+
+      # Step 5: Publish extension
+      - name: Publish extension
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}  # VSCE Personal Access Token from Secrets
+        run: |
+          echo "Publishing the extension to the VSCode marketplace"
+          vsce publish --pat $VSCE_PAT --yes
