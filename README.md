@@ -42,6 +42,13 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Release Notes
 
+### 0.0.4
+
+Added Blitz Assembly formatter with support for:
+- Comment alignment and label-based indentation
+- Formatting instructions, labels, and comments with customizable tab spacing
+- Automatic handling of label lines and in-line comments
+
 ### 0.0.3
 
 Added Blitz Assembly support with syntax highlighting, smart indentation, and more.

@@ -2,6 +2,15 @@
 
 All notable changes to the KPL Language Support extension will be documented in this file.
 
+## [0.0.4] - 2025-01-21
+
+### Added
+- Formatter for Blitz Assembly (.s):
+- Aligns comments to a defined column (TAB_SIZE and COMMENT_COLUMN rules).
+- Handles labels, instructions, and comment-only lines.
+- Supports multi-line formatting for instructions and comments.
+- Improved code readability and alignment for Blitz Assembly files.
+
 ## [0.0.3] - 2025-01-20
 
 ### Added
