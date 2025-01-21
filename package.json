@@ -89,5 +89,9 @@
     "@typescript-eslint/parser": "^6.x",
     "eslint": "^8.x",
     "typescript": "^5.x"
-  }
+  },
+  "activationEvents": [
+    "onLanguage:blitz-asm",
+    "onLanguage:kpl"
+  ]
 }
