@@ -38,4 +38,4 @@ jobs:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}  # VSCE Personal Access Token from Secrets
         run: |
           echo "Publishing the extension to the VSCode marketplace"
-          vsce publish --pat $VSCE_PAT --yes
+          vsce publish --pat $VSCE_PAT
