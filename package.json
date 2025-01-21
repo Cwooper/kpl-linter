@@ -2,12 +2,18 @@
   "name": "kpl-linter",
   "displayName": "kpl-linter",
   "description": "KPL Linting and Syntax Highlighting",
-  "version": "0.0.3",
+  "version": "0.0.4",
+  "author": "Cwooper",
   "publisher": "CwooperDev",
+  "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Cwooper/kpl-linter"
+    "url": "git+https://github.com/Cwooper/kpl-linter.git"
   },
+  "bugs": {
+    "url": "https://github.com/Cwooper/kpl-linter/issues"
+  },
+  "homepage": "https://github.com/Cwooper/kpl-linter#readme",
   "icon": "assets/extension-icon.png",
   "keywords": [
     "kpl",
@@ -37,10 +43,10 @@
         "configuration": "./language-configuration-kpl.json"
       },
       {
-        "id": "blitz-assembly",
+        "id": "blitz-asm",
         "aliases": [
-          "Blitz Assembly",
-          "blitz-asm"
+          "blitz-asm",
+          "Blitz Assembly"
         ],
         "extensions": [
           ".s"
@@ -55,10 +61,33 @@
         "path": "./syntaxes/kpl.tmLanguage.json"
       },
       {
-        "language": "blitz-assembly",
+        "language": "blitz-asm",
         "scopeName": "source.blitz-asm",
         "path": "./syntaxes/blitz-asm.tmLanguage.json"
       }
-    ]
+    ],
+    "configurationDefaults": {
+      "[blitz-asm]": {
+        "editor.tabSize": 8
+      }
+    }
+  },
+  "main": "./out/extension.js",
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.96.0",
+    "@types/node": "^16.x",
+    "@typescript-eslint/eslint-plugin": "^6.x",
+    "@typescript-eslint/parser": "^6.x",
+    "eslint": "^8.x",
+    "typescript": "^5.x"
   }
 }
