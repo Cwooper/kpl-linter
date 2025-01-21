@@ -2,7 +2,7 @@
   "name": "kpl-linter",
   "displayName": "kpl-linter",
   "description": "KPL Linting and Syntax Highlighting",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "CwooperDev",
   "repository": {
     "type": "git",
@@ -12,6 +12,7 @@
   "keywords": [
     "kpl",
     "kernel programming language",
+    "blitz assembly",
     "syntax highlighting"
   ],
   "engines": {
@@ -25,15 +26,26 @@
       {
         "id": "kpl",
         "aliases": [
-          "Kernel Programming Language",
-          "kpl"
+          "kpl",
+          "Kernel Programming Language"
         ],
         "extensions": [
           ".kpl",
           ".k",
           ".h"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration-kpl.json"
+      },
+      {
+        "id": "blitz-assembly",
+        "aliases": [
+          "Blitz Assembly",
+          "blitz-asm"
+        ],
+        "extensions": [
+          ".s"
+        ],
+        "configuration": "./language-configuration-asm.json"
       }
     ],
     "grammars": [
@@ -41,6 +53,11 @@
         "language": "kpl",
         "scopeName": "source.kpl",
         "path": "./syntaxes/kpl.tmLanguage.json"
+      },
+      {
+        "language": "blitz-assembly",
+        "scopeName": "source.blitz-asm",
+        "path": "./syntaxes/blitz-asm.tmLanguage.json"
       }
     ]
   }
