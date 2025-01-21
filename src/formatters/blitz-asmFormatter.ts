@@ -1,3 +1,6 @@
+// src/formatters/blitz-asmFormatter.ts
+// Formatter for blitz-asm
+
 import * as vscode from "vscode";
 import { FormattingRules } from "../utils/blitz-asmRules";
 
