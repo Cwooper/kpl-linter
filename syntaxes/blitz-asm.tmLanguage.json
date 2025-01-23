@@ -82,7 +82,7 @@
       "patterns": [
         {
           "name": "keyword.control.instruction.arithmetic.blitz-asm",
-          "match": "\\b(add|sub|mul|div|rem|sll|srl|sra|cmp|mov)\\b"
+          "match": "\\b(add|sub|mul|div|rem|sll|srl|sra|btst|cmp|mov)\\b"
         },
         {
           "name": "keyword.control.instruction.logical.blitz-asm",

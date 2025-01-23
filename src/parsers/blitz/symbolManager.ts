@@ -147,36 +147,6 @@ export class SymbolManager {
     return diagnostics;
   }
 
-  dumpState(): string {
-    // TODO remove
-    let output = "Symbol Manager State:\n===================\n\n";
-
-    for (const [name, symbol] of this.symbols.entries()) {
-      output += `Symbol: ${name}\n`;
-      output += `-----------------\n`;
-      output += `Type: ${symbol.type}\n`;
-
-      if (symbol.definition) {
-        output += `Definition: line ${symbol.definition.line}, column ${symbol.definition.column}\n`;
-      } else {
-        output += `Definition: undefined\n`;
-      }
-
-      if (symbol.value !== undefined) {
-        output += `Value: ${symbol.value}\n`;
-      }
-
-      output += `References (${symbol.references.length}):\n`;
-      symbol.references.forEach((ref, idx) => {
-        output += `  ${idx + 1}. line ${ref.line}, column ${ref.column}\n`;
-      });
-
-      output += "\n";
-    }
-
-    return output;
-  }
-
   validatePendingReferences(): BlitzDiagnostic[] {
     const diagnostics: BlitzDiagnostic[] = [];
 

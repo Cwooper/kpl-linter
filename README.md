@@ -49,6 +49,10 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Release Notes
 
+### 0.0.7
+
+Added `btst` instruction hotfix
+
 ### 0.0.6
 
 Added basic linting and hover support for Blitz Assembly files

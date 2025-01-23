@@ -48,8 +48,6 @@ export class BlitzParser {
       allTokens = allTokens.concat(lineTokens);
     });
 
-    console.log(this.symbolManager.dumpState()); // TODO remove
-
     // Second pass: Validate
     diagnostics.push(...this.symbolManager.validateSymbols());
     diagnostics.push(...this.validateTokens(allTokens));

@@ -4,9 +4,7 @@ import {
   RegisterDefinition,
   DirectiveDefinition,
   InstructionFormat,
-  FormatOperands,
   RegisterType,
-  OperandType,
 } from "./types";
 
 // -------------------- Instructions --------------------
@@ -135,6 +133,23 @@ export const Instructions: { [key: string]: InstructionDefinition } = {
     ],
     category: "bitwise",
   },
+  btst: {
+    mnemonic: "btst",
+    description: "Bit Test",
+    formats: [
+      {
+        format: InstructionFormat.C,
+        example: "btst Ra,Rc",
+        description: "Test the bit specified by Ra in the value stored in Rc",
+      },
+      {
+        format: InstructionFormat.E,
+        example: "btst data16,Rc",
+        description: "Test the bit specified by the immediate value data16 in Rc",
+      },
+    ],
+    category: "bitwise",
+  },
   rem: {
     mnemonic: "rem",
     description: "Integer remainder/modulo operation",
@@ -222,7 +237,6 @@ export const Instructions: { [key: string]: InstructionDefinition } = {
     ],
     category: "bitwise",
   },
-  // TODO: rem...
 
   // Memory Operations
   load: {
@@ -397,7 +411,6 @@ export const Instructions: { [key: string]: InstructionDefinition } = {
     ],
     category: "control",
   },
-  // TODO: bXX...
 
   // System Instructions
   nop: {
@@ -551,7 +564,6 @@ export const Instructions: { [key: string]: InstructionDefinition } = {
     ],
     category: "control",
   },
-  // TODO: seti,cleari,...
 
   // Test and Set instruction
   tset: {

@@ -3,6 +3,10 @@
 All notable changes to the KPL Language Support extension will be documented in
 this file.
 
+### [0.0.7] 2025-01-23
+
+Added `btst` instruction hotfix
+
 ### [0.0.6] 2025-01-23
 
 Added basic linting and hover support for Blitz Assembly files
