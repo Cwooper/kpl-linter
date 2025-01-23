@@ -45,8 +45,8 @@ export enum InstructionFormat {
 
 // Define two register types
 export enum RegisterType {
-  INTEGER = 'INTEGER',
-  FLOAT = 'FLOAT'
+  INTEGER = "INTEGER",
+  FLOAT = "FLOAT",
 }
 
 // Map each format to its operand types
@@ -90,4 +90,35 @@ export interface DirectiveDefinition {
   description: string;
   operands: OperandType[];
   example?: string;
+}
+
+export interface Token {
+  type:
+    | "label"
+    | "instruction"
+    | "directive"
+    | "register"
+    | "number"
+    | "string"
+    | "comment"
+    | "operator"
+    | "memory"
+    | "identifier";
+  value: string;
+  line: number;
+  column: number;
+  length: number;
+}
+
+export interface BlitzDiagnostic {
+  message: string;
+  severity: "error" | "warning" | "info";
+  line: number;
+  column: number;
+  length: number;
+}
+
+export interface ParseResult {
+  tokens: Token[];
+  diagnostics: BlitzDiagnostic[];
 }

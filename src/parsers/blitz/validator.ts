@@ -2,8 +2,8 @@ import {
   InstructionFormat,
   OperandType,
   FormatOperands,
-} from "./types/blitzTypes";
-import { Instructions } from "./types/blitzDefinitions";
+} from "./types/types";
+import { Instructions } from "./types/definitions";
 
 /**
  * Get hover text documentation for an instruction

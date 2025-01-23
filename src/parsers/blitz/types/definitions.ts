@@ -7,7 +7,7 @@ import {
   FormatOperands,
   RegisterType,
   OperandType,
-} from "./blitzTypes";
+} from "./types";
 
 // -------------------- Instructions --------------------
 
