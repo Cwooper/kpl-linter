@@ -49,6 +49,10 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Release Notes
 
+### 0.0.6
+
+Added basic linting and hover support for Blitz Assembly files
+
 ### 0.0.5
 
 Added CI/CD for faster development
