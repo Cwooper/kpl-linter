@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { BlitzFormatter } from './formatters/blitz-asmFormatter';
+import { BlitzFormatter } from './formatters/blitzFormatter';
 
 export function activate(context: vscode.ExtensionContext) {
     // Register the Blitz Assembly formatter
