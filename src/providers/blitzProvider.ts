@@ -2,7 +2,11 @@
 import * as vscode from "vscode";
 import { BlitzParser } from "../parsers/blitz/parser";
 import { BlitzDiagnostic, Token } from "../parsers/blitz/types/types";
-import { Instructions, Registers } from "../parsers/blitz/types/definitions";
+import {
+  Directives,
+  Instructions,
+  Registers,
+} from "../parsers/blitz/types/definitions";
 
 export class BlitzLanguageService {
   private diagnosticCollection: vscode.DiagnosticCollection;
@@ -125,13 +129,17 @@ export class BlitzHoverProvider implements vscode.HoverProvider {
         return this.getRegisterHover(token);
       case "label":
       case "identifier":
-        return this.getSymbolHover(token);
+        return this.getSymbolHover(token) || this.getConstantHover(token);
+      case "constant":
+        return this.getConstantHover(token);
       case "directive":
         return this.getDirectiveHover(token);
       case "memory":
         return this.getMemoryAccessHover(token);
       case "number":
         return this.getNumberHover(token);
+      case "string":
+        return this.getStringHover(token);
       default:
         return null;
     }
@@ -156,6 +164,35 @@ export class BlitzHoverProvider implements vscode.HoverProvider {
     if (instruction.category) {
       content.appendMarkdown(`\n**Category:** ${instruction.category}\n`);
     }
+
+    return new vscode.Hover(content);
+  }
+
+  private getConstantHover(token: Token): vscode.Hover | null {
+    const symbol = this.parser.getSymbol(token.value);
+    if (!symbol || symbol.type !== "constant") return null;
+
+    const content = new vscode.MarkdownString();
+    content.appendCodeblock(token.value, "blitz-asm");
+    content.appendMarkdown("\n\n**Constant**");
+
+    if (symbol.value !== undefined) {
+      content.appendMarkdown(`\nValue: ${symbol.value}`);
+    }
+
+    if (symbol.definition) {
+      content.appendMarkdown(`\nDefined at line ${symbol.definition.line + 1}`);
+    }
+
+    return new vscode.Hover(content);
+  }
+
+  private getStringHover(token: Token): vscode.Hover {
+    const content = new vscode.MarkdownString();
+    content.appendCodeblock(token.value, "blitz-asm");
+    content.appendMarkdown("\n\n**String Literal**");
+
+    content.appendMarkdown(`\nValue: ${token.value}`);
 
     return new vscode.Hover(content);
   }
@@ -202,23 +239,22 @@ export class BlitzHoverProvider implements vscode.HoverProvider {
   }
 
   private getDirectiveHover(token: Token): vscode.Hover {
-    const directiveInfo: { [key: string]: string } = {
-      ".text": "Begins the text (code) segment",
-      ".data": "Begins the data segment",
-      ".bss": "Begins the uninitialized data segment",
-      ".word": "Defines a 32-bit word value",
-      ".align": "Aligns to next word boundary",
-      ".ascii": "Defines an ASCII string",
-      ".export": "Exports a symbol for use by other files",
-      ".import": "Imports a symbol from another file",
-      ".skip": "Skips specified number of bytes",
-    };
+    const directive = Directives[token.value.toLowerCase()];
+    if (!directive) return new vscode.Hover("Unknown directive");
 
     const content = new vscode.MarkdownString();
     content.appendCodeblock(token.value, "blitz-asm");
-    content.appendMarkdown(
-      "\n\n" + (directiveInfo[token.value] || "Assembler directive")
-    );
+    content.appendMarkdown("\n\n" + directive.description);
+
+    if (directive.example) {
+      content.appendMarkdown("\n\n**Example:**\n");
+      content.appendCodeblock(directive.example, "blitz-asm");
+    }
+
+    if (directive.operands && directive.operands.length > 0) {
+      content.appendMarkdown("\n\n**Operands:**\n");
+      content.appendMarkdown(directive.operands.join(", "));
+    }
 
     return new vscode.Hover(content);
   }

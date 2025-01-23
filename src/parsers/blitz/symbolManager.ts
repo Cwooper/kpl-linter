@@ -1,4 +1,6 @@
 // src/parsers/blitz/symbolManager.ts
+import { BlitzDiagnostic } from "./types/types";
+
 export interface SymbolLocation {
   line: number;
   column: number;
@@ -14,6 +16,7 @@ export interface Symbol {
 
 export class SymbolManager {
   private symbols = new Map<string, Symbol>();
+  private pendingReferences = new Map<string, SymbolLocation[]>();
 
   addSymbol(symbol: Symbol): void {
     if (this.symbols.has(symbol.name)) {
@@ -21,7 +24,6 @@ export class SymbolManager {
 
       // Handle duplicate definitions
       if (existing.definition && symbol.definition) {
-        // Error will be caught in validation
         return;
       }
 
@@ -34,6 +36,13 @@ export class SymbolManager {
 
       this.symbols.set(symbol.name, existing);
     } else {
+      // Add any pending references to the new symbol
+      const pending = this.pendingReferences.get(symbol.name);
+      if (pending) {
+        symbol.references = [...symbol.references, ...pending];
+        this.pendingReferences.delete(symbol.name);
+      }
+
       this.symbols.set(symbol.name, symbol);
     }
   }
@@ -42,6 +51,14 @@ export class SymbolManager {
     const symbol = this.symbols.get(name);
     if (symbol) {
       symbol.references.push(location);
+    } else {
+      // Store reference for future symbol definition
+      let pending = this.pendingReferences.get(name);
+      if (!pending) {
+        pending = [];
+        this.pendingReferences.set(name, pending);
+      }
+      pending.push(location);
     }
   }
 
@@ -160,7 +177,27 @@ export class SymbolManager {
     return output;
   }
 
+  validatePendingReferences(): BlitzDiagnostic[] {
+    const diagnostics: BlitzDiagnostic[] = [];
+
+    for (const [name, locations] of this.pendingReferences.entries()) {
+      if (!this.symbols.has(name)) {
+        // Only report first occurrence of undefined symbol
+        diagnostics.push({
+          severity: "error",
+          message: `Symbol '${name}' is used but never defined`,
+          line: locations[0].line,
+          column: locations[0].column,
+          length: name.length,
+        });
+      }
+    }
+
+    return diagnostics;
+  }
+
   reset(): void {
     this.symbols.clear();
+    this.pendingReferences.clear();
   }
 }

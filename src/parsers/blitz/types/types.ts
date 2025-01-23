@@ -103,11 +103,17 @@ export interface Token {
     | "comment"
     | "operator"
     | "memory"
-    | "identifier";
+    | "identifier"
+    | "constant";
   value: string;
   line: number;
   column: number;
   length: number;
+}
+
+export interface TokenContext {
+  currentInstruction?: string;
+  expectingLabel?: boolean;
 }
 
 export interface BlitzDiagnostic {

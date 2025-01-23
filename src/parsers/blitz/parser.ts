@@ -1,10 +1,31 @@
 // src/parsers/blitz/parser.ts
-import { Token } from "./types/types";
+import { Token, TokenContext } from "./types/types";
 import { SymbolManager } from "./symbolManager";
 import { Directives, Instructions } from "./types/definitions";
 
 export class BlitzParser {
   private symbolManager: SymbolManager;
+  private tokenContext: TokenContext = {};
+  private CONTROL_FLOW_INSTRUCTIONS = new Set([
+    "jmp",
+    "call",
+    "be",
+    "bne",
+    "bl",
+    "ble",
+    "bg",
+    "bge",
+    "bvs",
+    "bvc",
+    "bns",
+    "bnc",
+    "bss",
+    "bsc",
+    "bis",
+    "bic",
+    "bps",
+    "bpc",
+  ]);
 
   constructor() {
     this.symbolManager = new SymbolManager();
@@ -39,6 +60,7 @@ export class BlitzParser {
   tokenizeLine(line: string, lineNum: number): Token[] {
     const tokens: Token[] = [];
     let position = 0;
+    this.tokenContext = {}; // Reset context for each line
 
     // Skip initial whitespace
     while (position < line.length && /\s/.test(line[position])) {
@@ -62,6 +84,54 @@ export class BlitzParser {
       return tokens;
     }
 
+    // Check for constant definition first
+    const constantMatch = line
+      .slice(position)
+      .match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)/);
+    if (constantMatch) {
+      const constantName = constantMatch[1];
+      const constantValue = constantMatch[2].trim(); // Just store the raw value string
+      const valueStart = line.indexOf(constantMatch[2]);
+      const valueTokens = this.tokenizeExpression(
+        constantMatch[2],
+        lineNum,
+        valueStart
+      );
+
+      // Add constant token
+      tokens.push({
+        type: "constant",
+        value: constantName,
+        line: lineNum,
+        column: position,
+        length: constantName.length,
+      });
+
+      // Add equals token
+      const equalPos = line.indexOf("=", position);
+      tokens.push({
+        type: "operator",
+        value: "=",
+        line: lineNum,
+        column: equalPos,
+        length: 1,
+      });
+
+      // Add value tokens
+      tokens.push(...valueTokens);
+
+      // Add the constant to symbol manager with its string value
+      this.symbolManager.addSymbol({
+        name: constantName,
+        type: "constant",
+        definition: { line: lineNum, column: position },
+        references: [],
+        value: constantValue,
+      });
+
+      return tokens;
+    }
+
     // Process tokens until end of line or comment
     while (position < line.length) {
       // Skip whitespace
@@ -82,7 +152,7 @@ export class BlitzParser {
         break;
       }
 
-      // Check for label (ends with :)
+      // Check for label definition (ends with :)
       const labelMatch = line.slice(position).match(/^([A-Za-z_]\w*):/);
       if (labelMatch) {
         tokens.push({
@@ -90,7 +160,7 @@ export class BlitzParser {
           value: labelMatch[1],
           line: lineNum,
           column: position,
-          length: labelMatch[0].length - 1, // Don't include : in length
+          length: labelMatch[0].length - 1,
         });
         position += labelMatch[0].length;
         continue;
@@ -110,21 +180,24 @@ export class BlitzParser {
         continue;
       }
 
-      // Check for instruction
-      const instrMatch = line.slice(position).match(/^[a-z]\w*/);
-      if (instrMatch && Instructions[instrMatch[0].toLowerCase()]) {
+      // Check for memory access [reg+offset] or [reg] BEFORE registers
+      const memMatch = line
+        .slice(position)
+        .match(/^\[(r[0-9]+|pc|sr)(\s*[-+]\s*(r[0-9]+|\d+))?\]/i);
+      if (memMatch) {
         tokens.push({
-          type: "instruction",
-          value: instrMatch[0].toLowerCase(),
+          type: "memory",
+          value: memMatch[0],
           line: lineNum,
           column: position,
-          length: instrMatch[0].length,
+          length: memMatch[0].length,
         });
-        position += instrMatch[0].length;
+        position += memMatch[0].length;
+        this.tokenContext.expectingLabel = false;
         continue;
       }
 
-      // Check for register
+      // Check for register BEFORE instruction (since instructions are lowercase)
       const regMatch = line
         .slice(position)
         .match(/^(r1[0-5]|r[0-9]|f1[0-5]|f[0-9]|pc|sr)\b/i);
@@ -137,10 +210,47 @@ export class BlitzParser {
           length: regMatch[0].length,
         });
         position += regMatch[0].length;
+        this.tokenContext.expectingLabel = false;
         continue;
       }
 
-      // Check for number (hex, decimal)
+      // Check for string literals
+      const stringMatch = line
+        .slice(position)
+        .match(/^(['"])(?:\\.|[^\x01])*?\1/);
+      if (stringMatch) {
+        tokens.push({
+          type: "string",
+          value: stringMatch[0],
+          line: lineNum,
+          column: position,
+          length: stringMatch[0].length,
+        });
+        position += stringMatch[0].length;
+        this.tokenContext.expectingLabel = false;
+        continue;
+      }
+
+      // Check for instruction
+      const instrMatch = line.slice(position).match(/^[a-z]\w*/);
+      if (instrMatch && Instructions[instrMatch[0].toLowerCase()]) {
+        const instr = instrMatch[0].toLowerCase();
+        this.tokenContext.currentInstruction = instr;
+        this.tokenContext.expectingLabel =
+          this.CONTROL_FLOW_INSTRUCTIONS.has(instr);
+
+        tokens.push({
+          type: "instruction",
+          value: instr,
+          line: lineNum,
+          column: position,
+          length: instrMatch[0].length,
+        });
+        position += instrMatch[0].length;
+        continue;
+      }
+
+      // Check for number (hex, decimal) BEFORE identifier
       const numMatch = line.slice(position).match(/^(0x[0-9A-Fa-f]+|\d+)\b/);
       if (numMatch) {
         tokens.push({
@@ -151,37 +261,36 @@ export class BlitzParser {
           length: numMatch[0].length,
         });
         position += numMatch[0].length;
+        this.tokenContext.expectingLabel = false;
         continue;
       }
 
-      // Check for string
-      if (line[position] === '"') {
-        let endQuote = position + 1;
-        let escaped = false;
-        while (endQuote < line.length) {
-          if (line[endQuote] === "\\") {
-            escaped = !escaped;
-          } else if (line[endQuote] === '"' && !escaped) {
-            break;
-          } else {
-            escaped = false;
-          }
-          endQuote++;
-        }
-        if (endQuote < line.length) {
-          tokens.push({
-            type: "string",
-            value: line.slice(position, endQuote + 1),
-            line: lineNum,
-            column: position,
-            length: endQuote - position + 1,
-          });
-          position = endQuote + 1;
-          continue;
-        }
+      // Finally check for identifier or label reference
+      const idMatch = line.slice(position).match(/^[A-Za-z_]\w*/);
+      if (idMatch) {
+        const value = idMatch[0];
+        const type = this.tokenContext.expectingLabel ? "label" : "identifier";
+
+        tokens.push({
+          type: type,
+          value: value,
+          line: lineNum,
+          column: position,
+          length: idMatch[0].length,
+        });
+
+        // Always add a reference for both identifiers and labels
+        this.symbolManager.addReference(value, {
+          line: lineNum,
+          column: position,
+        });
+
+        position += idMatch[0].length;
+        this.tokenContext.expectingLabel = false;
+        continue;
       }
 
-      // Check for operators
+      // Handle operators
       const opMatch = line.slice(position).match(/^([-+*/&|^~<>]|<<|>>|>>>|=)/);
       if (opMatch) {
         tokens.push({
@@ -195,33 +304,67 @@ export class BlitzParser {
         continue;
       }
 
-      // Check for memory access [reg+offset] or [reg]
-      const memMatch = line
-        .slice(position)
-        .match(/^\[(r[0-9]+|pc|sr)(\s*[-+]\s*(r[0-9]+|\d+))?\]/i);
-      if (memMatch) {
+      // Skip unrecognized character
+      position++;
+    }
+
+    return tokens;
+  }
+
+  private tokenizeExpression(
+    expr: string,
+    lineNum: number,
+    startColumn: number
+  ): Token[] {
+    const tokens: Token[] = [];
+    let position = 0;
+
+    while (position < expr.length) {
+      // Skip whitespace
+      while (position < expr.length && /\s/.test(expr[position])) {
+        position++;
+      }
+      if (position >= expr.length) break;
+
+      // Match hex numbers
+      const hexMatch = expr.slice(position).match(/^0x[0-9A-Fa-f]+/);
+      if (hexMatch) {
         tokens.push({
-          type: "memory",
-          value: memMatch[0],
+          type: "number",
+          value: hexMatch[0],
           line: lineNum,
-          column: position,
-          length: memMatch[0].length,
+          column: startColumn + position,
+          length: hexMatch[0].length,
         });
-        position += memMatch[0].length;
+        position += hexMatch[0].length;
         continue;
       }
 
-      // Identifier (for labels, constants)
-      const idMatch = line.slice(position).match(/^[A-Za-z_]\w*/);
-      if (idMatch) {
+      // Match decimal numbers
+      const decMatch = expr.slice(position).match(/^\d+/);
+      if (decMatch) {
         tokens.push({
-          type: "identifier",
-          value: idMatch[0],
+          type: "number",
+          value: decMatch[0],
           line: lineNum,
-          column: position,
-          length: idMatch[0].length,
+          column: startColumn + position,
+          length: decMatch[0].length,
         });
-        position += idMatch[0].length;
+        position += decMatch[0].length;
+        continue;
+      }
+
+      // Match operators
+      const opMatch = expr.slice(position).match(/^[-+*/<>|&^~]+/);
+      if (opMatch) {
+        tokens.push({
+          type: "operator",
+          value: opMatch[0],
+          line: lineNum,
+          column: startColumn + position,
+          length: opMatch[0].length,
+        });
+        position += opMatch[0].length;
         continue;
       }
 
@@ -233,14 +376,29 @@ export class BlitzParser {
   }
 
   private processLineSymbols(tokens: Token[], lineNum: number): void {
-    // Look for labels, imports, exports, and constants
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
 
       if (token.type === "label") {
+        if (tokens[i - 1]?.type === "instruction") {
+          // This is a label reference
+          this.symbolManager.addReference(token.value, {
+            line: lineNum,
+            column: token.column,
+          });
+        } else {
+          // This is a label definition
+          this.symbolManager.addSymbol({
+            name: token.value,
+            type: "label",
+            definition: { line: lineNum, column: token.column },
+            references: [],
+          });
+        }
+      } else if (token.type === "constant") {
         this.symbolManager.addSymbol({
           name: token.value,
-          type: "label",
+          type: "constant",
           definition: { line: lineNum, column: token.column },
           references: [],
         });
@@ -271,15 +429,38 @@ export class BlitzParser {
   }
 
   private validateTokens(tokens: Token[]): any[] {
-    // Basic validation rules
     const diagnostics: any[] = [];
 
-    // Add validation logic here
-    // Examples:
-    // - Instructions have valid operands
-    // - Memory access is properly formatted
-    // - Labels are in valid segments
-    // - Directives have correct arguments
+    // Check each token
+    tokens.forEach((token) => {
+      // For label references, check if they have a definition
+      if (token.type === "label" || token.type === "identifier") {
+        const symbol = this.symbolManager.getSymbol(token.value);
+        if (!symbol) {
+          // Unknown symbol
+          diagnostics.push({
+            severity: "error",
+            message: `Undefined symbol: '${token.value}'`,
+            line: token.line,
+            column: token.column,
+            length: token.length,
+          });
+        } else if (
+          symbol.type === "label" &&
+          !symbol.definition &&
+          token.type === "label"
+        ) {
+          // Label reference without definition
+          diagnostics.push({
+            severity: "error",
+            message: `Reference to undefined label: '${token.value}'`,
+            line: token.line,
+            column: token.column,
+            length: token.length,
+          });
+        }
+      }
+    });
 
     return diagnostics;
   }

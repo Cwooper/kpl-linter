@@ -1071,6 +1071,110 @@ export const Instructions: { [key: string]: InstructionDefinition } = {
     ],
     category: "control",
   },
+  mov: {
+    mnemonic: "mov",
+    description: "Move (copy) value from one register to another",
+    formats: [
+      {
+        format: InstructionFormat.C,
+        example: "mov Ra,Rc",
+        description: "Copy value from Ra to Rc",
+      },
+    ],
+    category: "memory",
+  },
+
+  set: {
+    mnemonic: "set",
+    description: "Set a register to an immediate value",
+    formats: [
+      {
+        format: InstructionFormat.G,
+        example: "set data16,Rc",
+        description: "Set register Rc to immediate value",
+      },
+    ],
+    category: "arithmetic",
+  },
+
+  cmp: {
+    mnemonic: "cmp",
+    description: "Compare two values and set condition codes",
+    formats: [
+      {
+        format: InstructionFormat.C,
+        example: "cmp Ra,Rc",
+        description: "Compare Ra with Rc and set condition codes",
+      },
+    ],
+    category: "arithmetic",
+  },
+
+  // No-operand system control instructions
+  cleari: {
+    mnemonic: "cleari",
+    description: "Clear interrupt enable flag",
+    formats: [
+      {
+        format: InstructionFormat.A,
+        example: "cleari",
+        description: "Clear the interrupt enable flag in status register",
+      },
+    ],
+    category: "system",
+  },
+
+  seti: {
+    mnemonic: "seti",
+    description: "Set interrupt enable flag",
+    formats: [
+      {
+        format: InstructionFormat.A,
+        example: "seti",
+        description: "Set the interrupt enable flag in status register",
+      },
+    ],
+    category: "system",
+  },
+
+  clearp: {
+    mnemonic: "clearp",
+    description: "Clear paging enable flag",
+    formats: [
+      {
+        format: InstructionFormat.A,
+        example: "clearp",
+        description: "Clear the paging enable flag in status register",
+      },
+    ],
+    category: "system",
+  },
+
+  setp: {
+    mnemonic: "setp",
+    description: "Set paging enable flag",
+    formats: [
+      {
+        format: InstructionFormat.A,
+        example: "setp",
+        description: "Set the paging enable flag in status register",
+      },
+    ],
+    category: "system",
+  },
+
+  clears: {
+    mnemonic: "clears",
+    description: "Clear supervisor mode flag",
+    formats: [
+      {
+        format: InstructionFormat.A,
+        example: "clears",
+        description: "Clear the supervisor mode flag in status register",
+      },
+    ],
+    category: "system",
+  },
 };
 
 // -------------------- Directives --------------------
