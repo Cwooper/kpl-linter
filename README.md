@@ -1,18 +1,24 @@
 # KPL Language Support
 
 Syntax highlighting and language support for the Kernel Programming Language
-(KPL) in Visual Studio Code. 
+(kpl) and the compiled Blitz Assembly Language (blitz-asm) from the
+[Blitz System](https://web.cecs.pdx.edu/~harry/Blitz/) (v2.0) in Visual
+Studio Code.
 
-Syntax highlighting based on Context Free Lanuage [here](https://web.cecs.pdx.edu/~harry/Blitz/BlitzDoc/Syntax.pdf).
+Links:
+[Code Examples](https://web.cecs.pdx.edu/~harry/Blitz/OSProject/p2/),
+[KPL Overview](https://web.cecs.pdx.edu/~harry/Blitz/BlitzDoc/KPLOverview.pdf),
+[Context Free Language](https://web.cecs.pdx.edu/~harry/Blitz/BlitzDoc/Syntax.pdf), and
+[Instruction Set](https://web.cecs.pdx.edu/~harry/Blitz/BlitzDoc/InstructionSet.pdf),
 
 ## Features
 
-- Full syntax highlighting for KPL files (`.k` extension)
+- Full syntax highlighting for KPL (`.k`) and Blitz Assembly (`.h`) files
 - Smart bracket matching and autoclosing
 - Code folding
 - Comment toggling
 - Auto-indentation for code blocks
-- Support for:
+- Syntax Highlighting Support for:
   - Classes and interfaces
   - Functions and methods
   - Control structures
@@ -20,6 +26,7 @@ Syntax highlighting based on Context Free Lanuage [here](https://web.cecs.pdx.ed
   - Error handling
   - Parameterized classes
   - Function types and pointers
+- A formatter for the `blitz-asm` language files
 
 ## Installation
 
@@ -41,6 +48,10 @@ Please report any issues on the [GitHub repository](https://github.com/Cwooper/k
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Release Notes
+
+### 0.0.6
+
+Added basic linting and hover support for Blitz Assembly files
 
 ### 0.0.5
 

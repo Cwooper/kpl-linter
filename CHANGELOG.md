@@ -3,7 +3,11 @@
 All notable changes to the KPL Language Support extension will be documented in
 this file.
 
-## [0.0.4] - 2025-01-21
+### [0.0.6] 2025-01-23
+
+Added basic linting and hover support for Blitz Assembly files
+
+## [0.0.5] - 2025-01-21
 
 Added CI/CD for faster development and deployment
 
