@@ -109,13 +109,28 @@
       ]
     },
     "strings": {
-      "name": "string.quoted.double.kpl",
-      "begin": "\"",
-      "end": "\"",
       "patterns": [
         {
-          "name": "constant.character.escape.kpl",
-          "match": "\\\\."
+          "name": "string.quoted.double.kpl",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.kpl",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.kpl",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.kpl",
+              "match": "\\\\."
+            }
+          ]
         }
       ]
     },
