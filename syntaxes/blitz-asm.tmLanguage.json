@@ -126,6 +126,17 @@
               "match": "\\\\([rntx\"\\\\]|x[0-9A-Fa-f]{2}|0)"
             }
           ]
+        },
+        {
+          "name": "string.quoted.single.blitz-asm", 
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.blitz-asm",
+              "match": "\\\\([rntx'\\\\]|x[0-9A-Fa-f]{2}|0)"
+            }
+          ]
         }
       ]
     },

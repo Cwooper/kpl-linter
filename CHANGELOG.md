@@ -3,6 +3,10 @@
 All notable changes to the KPL Language Support extension will be documented in
 this file.
 
+### [0.0.8] 2025-01-24
+
+Added single quote string to blitz-asm tmLanguage
+
 ### [0.0.7] 2025-01-23
 
 Added `btst` instruction hotfix
