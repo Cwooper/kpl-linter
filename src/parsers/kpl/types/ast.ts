@@ -1,56 +1,56 @@
 // kpl ast types
 
 // Base types for all AST nodes
-interface Position {
+export interface Position {
   line: number;
   column: number;
   file: string;
 }
 
-interface Node {
+export interface Node {
   type: string;
   position: Position;
 }
 
 // Top-level constructs
-interface Program extends Node {
+export interface Program extends Node {
   type: "Program";
   files: (HeaderFile | CodeFile)[];
 }
 
-interface HeaderFile extends Node {
+export interface HeaderFile extends Node {
   type: "HeaderFile";
   id: string;
   uses?: Uses;
   declarations: Declaration[];
 }
 
-interface CodeFile extends Node {
+export interface CodeFile extends Node {
   type: "CodeFile";
   id: string;
   declarations: Declaration[];
 }
 
 // Uses and package handling
-interface Uses extends Node {
+export interface Uses extends Node {
   type: "Uses";
   packages: Package[];
 }
 
-interface Package extends Node {
+export interface Package extends Node {
   type: "Package";
   name: string | { value: string; type: "STRING" };
   renaming?: Rename[];
 }
 
-interface Rename extends Node {
+export interface Rename extends Node {
   type: "Rename";
   from: string;
   to: string;
 }
 
 // Declarations
-type Declaration =
+export type Declaration =
   | ConstantDecl
   | ErrorDecl
   | VarDecl
@@ -62,51 +62,51 @@ type Declaration =
   | ClassDecl
   | BehaviorDecl;
 
-interface ConstantDecl extends Node {
+export interface ConstantDecl extends Node {
   type: "ConstantDecl";
   name: string;
   value: Expression;
 }
 
-interface ErrorDecl extends Node {
+export interface ErrorDecl extends Node {
   type: "ErrorDecl";
   name: string;
   parameters: Parameter[];
 }
 
-interface VarDecl extends Node {
+export interface VarDecl extends Node {
   type: "VarDecl";
   names: string[];
   varType: Type;
   initializer?: Expression;
 }
 
-interface EnumDecl extends Node {
+export interface EnumDecl extends Node {
   type: "EnumDecl";
   name: string;
   baseValue?: Expression;
   members: string[];
 }
 
-interface TypeDecl extends Node {
+export interface TypeDecl extends Node {
   type: "TypeDecl";
   name: string;
   value: Type;
 }
 
-interface Parameter extends Node {
+export interface Parameter extends Node {
   type: "Parameter";
   name: string;
   paramType: Type;
 }
 
 // Types
-interface Type extends Node {
+export interface Type extends Node {
   type: "Type";
   kind: TypeKind;
 }
 
-type TypeKind =
+export type TypeKind =
   | {
       kind: "Basic";
       basicType:
@@ -125,7 +125,7 @@ type TypeKind =
   | { kind: "Named"; name: string; typeArguments?: Type[] };
 
 // Functions and Methods
-interface FunctionProto extends Node {
+export interface FunctionProto extends Node {
   type: "FunctionProto";
   name: string;
   parameters: Parameter[];
@@ -133,7 +133,7 @@ interface FunctionProto extends Node {
   isExternal: boolean;
 }
 
-interface FunctionDecl extends Node {
+export interface FunctionDecl extends Node {
   type: "FunctionDecl";
   name: string;
   parameters: Parameter[];
@@ -142,7 +142,7 @@ interface FunctionDecl extends Node {
   body: Statement[];
 }
 
-interface NamelessFunctionDecl extends Node {
+export interface NamelessFunctionDecl extends Node {
   type: "NamelessFunctionDecl";
   parameters: Parameter[];
   returnType?: Type;
@@ -151,7 +151,7 @@ interface NamelessFunctionDecl extends Node {
 }
 
 // Statements
-type Statement =
+export type Statement =
   | IfStatement
   | WhileStatement
   | DoUntilStatement
@@ -167,7 +167,7 @@ type Statement =
   | FreeStatement
   | DebugStatement;
 
-interface IfStatement extends Node {
+export interface IfStatement extends Node {
   type: "IfStatement";
   condition: Expression;
   thenBlock: Statement[];
@@ -178,19 +178,19 @@ interface IfStatement extends Node {
   elseBlock?: Statement[];
 }
 
-interface WhileStatement extends Node {
+export interface WhileStatement extends Node {
   type: "WhileStatement";
   condition: Expression;
   body: Statement[];
 }
 
-interface DoUntilStatement extends Node {
+export interface DoUntilStatement extends Node {
   type: "DoUntilStatement";
   body: Statement[];
   condition: Expression;
 }
 
-interface ForStatement extends Node {
+export interface ForStatement extends Node {
   type: "ForStatement";
   variant: "traditional" | "range";
   // For traditional for loop
@@ -205,31 +205,31 @@ interface ForStatement extends Node {
   body: Statement[];
 }
 
-interface AssignmentStatement extends Node {
+export interface AssignmentStatement extends Node {
   type: "AssignmentStatement";
   lvalue: LValue;
   expression: Expression;
 }
 
-interface CallStatement extends Node {
+export interface CallStatement extends Node {
   type: "CallStatement";
   expression: CallExpression | MessageExpression;
 }
 
-interface ReturnStatement extends Node {
+export interface ReturnStatement extends Node {
   type: "ReturnStatement";
   expression?: Expression;
 }
 
-interface BreakStatement extends Node {
+export interface BreakStatement extends Node {
   type: "BreakStatement";
 }
 
-interface ContinueStatement extends Node {
+export interface ContinueStatement extends Node {
   type: "ContinueStatement";
 }
 
-interface SwitchStatement extends Node {
+export interface SwitchStatement extends Node {
   type: "SwitchStatement";
   expression: Expression;
   cases: {
@@ -239,7 +239,7 @@ interface SwitchStatement extends Node {
   defaultCase?: Statement[];
 }
 
-interface TryStatement extends Node {
+export interface TryStatement extends Node {
   type: "TryStatement";
   body: Statement[];
   catches: {
@@ -249,34 +249,34 @@ interface TryStatement extends Node {
   }[];
 }
 
-interface ThrowStatement extends Node {
+export interface ThrowStatement extends Node {
   type: "ThrowStatement";
   errorName: string;
   arguments: Expression[];
 }
 
-interface FreeStatement extends Node {
+export interface FreeStatement extends Node {
   type: "FreeStatement";
   expression: Expression;
 }
 
-interface DebugStatement extends Node {
+export interface DebugStatement extends Node {
   type: "DebugStatement";
 }
 
 // LValue
-interface LValue extends Node {
+export interface LValue extends Node {
   type: "LValue";
   kind: LValueKind;
 }
 
-type LValueKind =
+export type LValueKind =
   | { kind: "Identifier"; name: string }
   | { kind: "ArrayAccess"; array: Expression; indices: Expression[] }
   | { kind: "FieldAccess"; object: Expression; field: string };
 
 // Expressions
-type Expression =
+export type Expression =
   | BinaryExpression
   | UnaryExpression
   | LiteralExpression
@@ -291,66 +291,66 @@ type Expression =
   | ArrayAccessExpression
   | TypeCastExpression;
 
-interface BinaryExpression extends Node {
+export interface BinaryExpression extends Node {
   type: "BinaryExpression";
   operator: string;
   left: Expression;
   right: Expression;
 }
 
-interface UnaryExpression extends Node {
+export interface UnaryExpression extends Node {
   type: "UnaryExpression";
   operator: string;
   operand: Expression;
 }
 
-interface LiteralExpression extends Node {
+export interface LiteralExpression extends Node {
   type: "LiteralExpression";
   kind: "INTEGER" | "DOUBLE" | "CHAR" | "STRING" | "true" | "false" | "null";
   value: number | string | boolean | null;
 }
 
-interface IdentifierExpression extends Node {
+export interface IdentifierExpression extends Node {
   type: "IdentifierExpression";
   name: string;
 }
 
-interface CallExpression extends Node {
+export interface CallExpression extends Node {
   type: "CallExpression";
   callee: Expression;
   arguments: Expression[];
 }
 
-interface MessageExpression extends Node {
+export interface MessageExpression extends Node {
   type: "MessageExpression";
   receiver: Expression;
   message: string;
   arguments: Expression[];
 }
 
-interface MemberExpression extends Node {
+export interface MemberExpression extends Node {
   type: "MemberExpression";
   object: Expression;
   property: string;
 }
 
-interface NewExpression extends Node {
+export interface NewExpression extends Node {
   type: "NewExpression";
   constructor: Constructor;
 }
 
-interface AllocExpression extends Node {
+export interface AllocExpression extends Node {
   type: "AllocExpression";
   constructor: Constructor;
 }
 
-interface Constructor extends Node {
+export interface Constructor extends Node {
   type: "Constructor";
   constructorType: Type;
   kind: ConstructorKind;
 }
 
-type ConstructorKind =
+export type ConstructorKind =
   | {
       kind: "ClassRecord";
       initializers: { field: string; value: Expression }[];
@@ -360,25 +360,25 @@ type ConstructorKind =
       initializers: { index?: Expression; value: Expression }[];
     };
 
-interface SizeOfExpression extends Node {
+export interface SizeOfExpression extends Node {
   type: "SizeOfExpression";
   sizeType: Type;
 }
 
-interface TypeCheckExpression extends Node {
+export interface TypeCheckExpression extends Node {
   type: "TypeCheckExpression";
   kind: "isInstanceOf" | "isKindOf";
   expression: Expression;
   checkType: Type;
 }
 
-interface ArrayAccessExpression extends Node {
+export interface ArrayAccessExpression extends Node {
   type: "ArrayAccessExpression";
   array: Expression;
   indices: Expression[];
 }
 
-interface TypeCastExpression extends Node {
+export interface TypeCastExpression extends Node {
   type: "TypeCastExpression";
   kind: "asPtrTo" | "asInteger";
   expression: Expression;
@@ -386,7 +386,7 @@ interface TypeCastExpression extends Node {
 }
 
 // OOP Constructs
-interface InterfaceDecl extends Node {
+export interface InterfaceDecl extends Node {
   type: "InterfaceDecl";
   name: string;
   typeParameters?: TypeParameter[];
@@ -394,7 +394,7 @@ interface InterfaceDecl extends Node {
   messages?: MethodProto[];
 }
 
-interface ClassDecl extends Node {
+export interface ClassDecl extends Node {
   type: "ClassDecl";
   name: string;
   typeParameters?: TypeParameter[];
@@ -404,24 +404,24 @@ interface ClassDecl extends Node {
   methods?: MethodProto[];
 }
 
-interface BehaviorDecl extends Node {
+export interface BehaviorDecl extends Node {
   type: "BehaviorDecl";
   name: string;
   methods: MethodDecl[];
 }
 
-interface TypeParameter extends Node {
+export interface TypeParameter extends Node {
   type: "TypeParameter";
   name: string;
   constraint: Type;
 }
 
-interface MethodProto extends Node {
+export interface MethodProto extends Node {
   type: "MethodProto";
   kind: MethodKind;
 }
 
-type MethodKind =
+export type MethodKind =
   | { kind: "Normal"; name: string; parameters: Parameter[]; returnType?: Type }
   | { kind: "Infix"; operator: string; parameter: Parameter; returnType: Type }
   | { kind: "Prefix"; operator: string; returnType: Type }
@@ -431,7 +431,7 @@ type MethodKind =
       returnType?: Type;
     };
 
-interface MethodDecl extends Node {
+export interface MethodDecl extends Node {
   type: "MethodDecl";
   prototype: MethodProto;
   variables?: VarDecl[];
