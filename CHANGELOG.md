@@ -3,11 +3,15 @@
 All notable changes to the KPL Language Support extension will be documented in
 this file.
 
-### [0.0.8] 2025-01-24
+## [0.0.9] 2025-01-28
+
+Added constants highlighting to the KPL language syntax highlighting
+
+## [0.0.8] 2025-01-24
 
 Added single quote string to blitz-asm tmLanguage
 
-### [0.0.7] 2025-01-23
+## [0.0.7] 2025-01-23
 
 Added `btst` instruction hotfix
 
@@ -22,6 +26,7 @@ Added CI/CD for faster development and deployment
 ## [0.0.4] - 2025-01-21
 
 ### Added
+
 - Formatter for Blitz Assembly (.s):
 - Aligns comments to a defined column (TAB_SIZE and COMMENT_COLUMN rules).
 - Handles labels, instructions, and comment-only lines.
@@ -31,6 +36,7 @@ Added CI/CD for faster development and deployment
 ## [0.0.3] - 2025-01-20
 
 ### Added
+
 - Support for Blitz Assembly (.s) files
   - Syntax highlighting for instructions, labels, registers, and comments
   - Label-based indentation
@@ -46,6 +52,7 @@ Added CI/CD for faster development and deployment
 ## [0.0.1] - 2025-01-18
 
 ### Added
+
 - Initial syntax highlighting support
 - Basic language configuration
   - Comment toggling

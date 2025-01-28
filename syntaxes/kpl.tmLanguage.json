@@ -122,6 +122,10 @@
     "constants": {
       "patterns": [
         {
+          "name": "constant.other.kpl",
+          "match": "\\b[A-Z][A-Z0-9_]*\\b"
+        },
+        {
           "name": "constant.language.kpl",
           "match": "\\b(true|false|null)\\b"
         },

@@ -49,6 +49,10 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Release Notes
 
+### 0.0.9
+
+Added constants checking to the KPL language syntax highlighting
+
 ### 0.0.8
 
 Added single quote string to the Blitz Assembly Language syntax highlighting
