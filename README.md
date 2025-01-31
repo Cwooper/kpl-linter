@@ -13,7 +13,7 @@ Links:
 
 ## Features
 
-- Full syntax highlighting for KPL (`.k`) and Blitz Assembly (`.h`) files
+- Full syntax highlighting for KPL (`.k`, `.h`) and Blitz Assembly (`.s`) files
 - Smart bracket matching and autoclosing
 - Code folding
 - Comment toggling
@@ -87,6 +87,24 @@ Initial release of KPL Language Support:
 - Code block detection
 - Smart indentation
 - Bracket matching
+
+## TODO
+
+Features
+
+- [ ] Auto-closing statemtnts (e.g., `if` and `endIf`)
+- [ ] `kpl` formatter
+- [ ] Parse `kpl` into an ast
+  - [ ] `tokenizer` with look aheads based on rules for `kpl` CFL
+  - [ ] store tokens into `symbolTable`
+  - [ ] basic token validation
+  - [ ] code auto-completion
+  - [ ] hover support
+
+Bugs
+
+- [x] add `clr` `blitz-asm` command
+- [ ] fix duplicating labels in `blitz-asm` `symbolManager`
 
 ## License
 
