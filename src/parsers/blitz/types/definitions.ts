@@ -1136,6 +1136,19 @@ export const Instructions: { [key: string]: InstructionDefinition } = {
     category: "system",
   },
 
+  clr: {
+    mnemonic: "clr",
+    description: "clears register",
+    formats: [
+      {
+        format: InstructionFormat.B,
+        example: "clr r1",
+        description: "Clear the specified register",
+      },
+    ],
+    category: "system",
+  },
+
   seti: {
     mnemonic: "seti",
     description: "Set interrupt enable flag",
