@@ -125,6 +125,54 @@ export const SPECIAL_STATEMENTS: SpecialStatement[] = [
     },
 ];
 
+
+export interface TypeDefinition {
+    name: string;
+    snippet: string;
+    documentation?: string;
+}
+
+export const PRIMITIVE_TYPES: TypeDefinition[] = [
+    {
+        name: 'int',
+        snippet: 'int',
+        documentation: 'Integer type'
+    },
+    {
+        name: 'char',
+        snippet: 'char',
+        documentation: 'Character type'
+    },
+    {
+        name: 'bool',
+        snippet: 'bool',
+        documentation: 'Boolean type'
+    },
+    {
+        name: 'double',
+        snippet: 'double',
+        documentation: 'Double precision floating point type'
+    },
+    {
+        name: 'void',
+        snippet: 'void',
+        documentation: 'Void type'
+    }
+];
+
+export const SPECIAL_TYPES: TypeDefinition[] = [
+    {
+        name: 'typeOfNull',
+        snippet: 'typeOfNull',
+        documentation: 'Type of null value'
+    },
+    {
+        name: 'anyType',
+        snippet: 'anyType',
+        documentation: 'Any type'
+    }
+];
+
 // Helper functions to work with statements
 export const getBlockStatement = (start: string): BlockStatement | undefined => {
     return BLOCK_STATEMENTS.find(statement => statement.start === start);
@@ -144,4 +192,15 @@ export const isBlockEnd = (word: string): boolean => {
 
 export const isSpecialStatement = (word: string): boolean => {
     return SPECIAL_STATEMENTS.some(statement => statement.keyword === word);
+};
+
+// Helper to get all available types
+export const getAllTypes = (): TypeDefinition[] => [
+    ...PRIMITIVE_TYPES,
+    ...SPECIAL_TYPES
+];
+
+// Helper to check if something is a type name
+export const isTypeName = (name: string): boolean => {
+    return getAllTypes().some(type => type.name === name);
 };
