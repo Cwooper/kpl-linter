@@ -977,20 +977,20 @@ export class KPLParser {
         expression,
         position: startPosition,
       };
+    } else if (this.isStartOfLValue()) {
+      console.log("This is an L VALUE");
+      console.log(this.current?.type);
+      const lvalue = this.parseLValue();
+      this.consume(TokenType.EQUAL, "Expected '=' after left-hand side");
+      const value = this.parseExpr();
+      return {
+        type: "AssignmentStatement",
+        lvalue,
+        expression: value,
+        position: startPosition,
+      };
     } else {
-      // Handle assignment, function calls, and message sends
       const expr = this.parseExpr();
-
-      // Check for assignment
-      if (this.match(TokenType.EQUAL)) {
-        const value = this.parseExpr();
-        return {
-          type: "AssignmentStatement",
-          lvalue: this.expressionToLValue(expr),
-          expression: value,
-          position: startPosition,
-        };
-      }
 
       // Check for message sends with chained messages
       if (
@@ -1129,7 +1129,8 @@ export class KPLParser {
     }
 
     // Range-based for loop
-    const lvalue = this.expressionToLValue(this.parseExpr());
+    // First check if we have an identifier
+    const lvalue = this.parseLValue();
     this.consume(TokenType.EQUAL, "Expected '=' after for loop variable");
     const start = this.parseExpr();
     this.consume(TokenType.TO, "Expected 'to' in for loop range");
@@ -1232,33 +1233,6 @@ export class KPLParser {
       arguments: arguments_,
       position: startPosition,
     };
-  }
-
-  private expressionToLValue(expr: AST.Expression): AST.LValue {
-    switch (expr.type) {
-      case "IdentifierExpression":
-        return {
-          type: "IdentifierLValue",
-          name: expr.name,
-          position: expr.position,
-        };
-      case "ArrayAccessExpression":
-        return {
-          type: "ArrayAccessLValue",
-          array: expr.array,
-          indices: expr.indices,
-          position: expr.position,
-        };
-      case "FieldAccessExpression":
-        return {
-          type: "FieldAccessLValue",
-          object: expr.object,
-          field: expr.field,
-          position: expr.position,
-        };
-      default:
-        throw this.error(this.current!, "Invalid left-hand side in assignment");
-    }
   }
 
   private parseType(): AST.Type {
@@ -1536,6 +1510,63 @@ export class KPLParser {
     };
   }
 
+  private parseLValue(): AST.LValue {
+    const expression = this.parseExpr();
+
+    // Convert the expression to an LValue using our helper method
+    try {
+      return this.expressionToLValue(expression);
+    } catch (error) {
+      // If expressionToLValue throws an error, provide more context
+      throw this.error(
+        this.current!,
+        `Invalid left-hand side of assignment. Expected identifier, array access, or field access, but got ${expression.type}`
+      );
+    }
+  }
+
+  private isStartOfLValue(): boolean {
+    if (this.isAtEnd()) return false;
+
+    // An LValue starts with either:
+    // - an identifier
+    // - a parenthesis (for complex expressions)
+    // - a star (for pointer dereference)
+    return (
+      (this.check(TokenType.IDENTIFIER) ||
+      this.check(TokenType.LEFT_PAREN) ||
+      this.check(TokenType.STAR))
+    );
+  }
+
+  // The existing expressionToLValue helper method for reference:
+  private expressionToLValue(expr: AST.Expression): AST.LValue {
+    switch (expr.type) {
+      case "IdentifierExpression":
+        return {
+          type: "IdentifierLValue",
+          name: expr.name,
+          position: expr.position,
+        };
+      case "ArrayAccessExpression":
+        return {
+          type: "ArrayAccessLValue",
+          array: expr.array,
+          indices: expr.indices,
+          position: expr.position,
+        };
+      case "FieldAccessExpression":
+        return {
+          type: "FieldAccessLValue",
+          object: expr.object,
+          field: expr.field,
+          position: expr.position,
+        };
+      default:
+        throw this.error(this.current!, "Invalid left-hand side in assignment");
+    }
+  }
+
   // Main expression parser that handles all precedence levels
   private parseExpr(): AST.Expression {
     let expr = this.parseExpr2();
@@ -1577,9 +1608,7 @@ export class KPLParser {
   private parseExpr2(): AST.Expression {
     let expr = this.parseExpr3();
 
-    while (
-      this.check(TokenType.IDENTIFIER)
-    ) {
+    while (this.check(TokenType.IDENTIFIER)) {
       const operator = this.advance().lexeme;
       const right = this.parseExpr3();
       expr = {
@@ -1754,8 +1783,8 @@ export class KPLParser {
   private parseExpr12(): AST.Expression {
     let expr = this.parseExpr13();
 
-    while (this.match(TokenType.PLUS, TokenType.MINUS)) {
-      const operator = this.previous!.lexeme;
+    while (this.check(TokenType.PLUS) || this.check(TokenType.MINUS)) {
+      const operator = this.advance().lexeme;
       const right = this.parseExpr13();
       expr = {
         type: "BinaryExpression",
@@ -1789,9 +1818,7 @@ export class KPLParser {
 
   private parseExpr15(): AST.Expression {
     // Handle unary operators (OPERATOR Expr15)
-    if (
-      this.check(TokenType.IDENTIFIER)
-    ) {
+    if (this.isOperator()) {
       const operator = this.advance().lexeme;
       const operand = this.parseExpr15();
       return {
@@ -2040,6 +2067,34 @@ export class KPLParser {
     }
 
     throw this.error(this.current!, "Expected expression");
+  }
+
+  private isOperator(): boolean {
+    // Try to match any operator token
+    return this.match(
+      // Arithmetic operators
+      TokenType.PLUS, // +
+      TokenType.MINUS, // -
+      TokenType.STAR, // *
+      TokenType.SLASH, // /
+      TokenType.PERCENT, // %
+
+      // Bitwise operators
+      TokenType.AND, // &
+      TokenType.OR, // |
+      TokenType.XOR, // ^
+      TokenType.SHIFT_LEFT, // <<
+      TokenType.SHIFT_RIGHT, // >>
+      TokenType.SHIFT_RIGHT_UNSIGNED, // >>>
+
+      // Comparison operators
+      TokenType.EQUAL_EQUAL, // ==
+      TokenType.BANG_EQUAL, // !=
+      TokenType.LESS, // <
+      TokenType.LESS_EQUAL, // <=
+      TokenType.GREATER, // >
+      TokenType.GREATER_EQUAL // >=
+    );
   }
 
   private parseOperator(errorMessage: string): string {

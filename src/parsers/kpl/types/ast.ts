@@ -190,7 +190,8 @@ export type Statement =
   | ThrowStatement
   | FreeStatement
   | DebugStatement
-  | MessageStatement; // Added for message passing
+  | MessageStatement
+  | LValue;
 
 export interface IfStatement extends Node {
   type: "IfStatement";
