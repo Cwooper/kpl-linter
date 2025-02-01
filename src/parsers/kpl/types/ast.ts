@@ -315,7 +315,8 @@ export type Expression =
   | TypeCheckExpression
   | ArrayAccessExpression
   | TypeCastExpression
-  | ChainedExpression; // Added for expression chaining
+  | ChainedExpression
+  | NamelessFunctionExpression;
 
 export interface BinaryExpression extends Node {
   type: "BinaryExpression";
@@ -375,6 +376,11 @@ export interface ChainedExpression extends Node {
   chainOperators: string[]; // The operators between expressions
 }
 
+export interface NamelessFunctionExpression extends Node {
+  type: "NamelessFunctionExpression";
+  function: NamelessFunctionDecl;
+}
+
 // LValue (Left-hand side value)
 export type LValue = IdentifierLValue | ArrayAccessLValue | FieldAccessLValue;
 
@@ -401,7 +407,7 @@ export interface InterfaceDecl extends Node {
   name: string;
   typeParameters?: TypeParameter[];
   extends?: NamedType[];
-  messages?: MessageProto[];
+  messages?: MethodProto[];
 }
 
 export interface ClassDecl extends Node {
@@ -418,13 +424,6 @@ export interface BehaviorDecl extends Node {
   type: "BehaviorDecl";
   name: string;
   methods: MethodDecl[];
-}
-
-export interface MessageProto extends Node {
-  type: "MessageProto";
-  name: string;
-  parameters: Parameter[];
-  returnType?: Type;
 }
 
 export interface MethodProto extends Node {
