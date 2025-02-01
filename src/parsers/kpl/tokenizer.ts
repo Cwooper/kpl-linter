@@ -231,13 +231,14 @@ export class Tokenizer {
   private number(): void {
     // Check for hexadecimal
     if (
-      this.current > this.start + 1 &&
+      this.current < this.source.length - 1 && // Ensure there are at least two characters left
       this.source[this.start] === "0" &&
       (this.source[this.start + 1] === "x" ||
         this.source[this.start + 1] === "X")
     ) {
-      this.advance(); // Consume 'x'
-      this.hexNumber();
+      this.advance(); // Consume '0'
+      this.advance(); // Consume 'x' or 'X'
+      this.hexNumber(); // Parse the hexadecimal number
       return;
     }
 
@@ -269,11 +270,17 @@ export class Tokenizer {
   }
 
   private hexNumber(): void {
+    // Parse hexadecimal digits
     while (this.isHexDigit(this.peek())) this.advance();
 
-    const hexStr = this.source.substring(this.start + 2, this.current); // Skip '0x'
+    // Extract the hexadecimal string (excluding '0x' or '0X')
+    const hexStr = this.source.substring(this.start + 2, this.current);
+
+    // Convert the hexadecimal string to a number
     const value = parseInt(hexStr, 16);
-    this.addToken(TokenType.INTEGER, value);
+
+    // Add the hexadecimal token
+    this.addToken(TokenType.HEX, value);
   }
 
   private isHexDigit(c: string): boolean {

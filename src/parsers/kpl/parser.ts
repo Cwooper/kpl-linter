@@ -85,7 +85,7 @@ export class KPLParser {
     while (!this.isAtEnd() && !this.check(TokenType.END_HEADER)) {
       // Parse other declarations based on the token type
       if (this.match(TokenType.CONST)) {
-        declarations.push(this.parseConstants());
+        declarations.push(...this.parseConstants());
       } else if (this.match(TokenType.ERRORS)) {
         declarations.push(this.parseErrors());
       } else if (this.match(TokenType.VAR)) {
@@ -135,7 +135,7 @@ export class KPLParser {
     // Parse declarations until we hit endCode
     while (!this.isAtEnd() && !this.check(TokenType.END_CODE)) {
       if (this.match(TokenType.CONST)) {
-        declarations.push(this.parseConstants());
+        declarations.push(...this.parseConstants());
       } else if (this.match(TokenType.ERRORS)) {
         declarations.push(this.parseErrors());
       } else if (this.match(TokenType.VAR)) {
@@ -403,9 +403,20 @@ export class KPLParser {
     return parameters;
   }
 
-  private parseConstants(): AST.ConstantDecl {
+  private parseConstants(): AST.ConstantDecl[] {
     // We've already consumed the 'const' token
-    const startPosition = this.getPosition(this.previous!);
+    const declarations: AST.ConstantDecl[] = [];
+
+    // Parse one or more constant declarations
+    while (this.peekNext().type == TokenType.EQUAL) {
+      declarations.push(this.parseConstant());
+    }
+
+    return declarations;
+  }
+
+  private parseConstant(): AST.ConstantDecl {
+    const startPosition = this.getPosition(this.current!);
 
     // Parse constant declarations
     const idToken = this.consume(
@@ -425,6 +436,7 @@ export class KPLParser {
 
   private parseVarDecl(): AST.VarDecl {
     // Parse ID list
+    // TODO, parse a single var first if it exists
     const names = this.parseIDList();
 
     // Parse type annotation
@@ -454,10 +466,8 @@ export class KPLParser {
     do {
       declarations.push(this.parseVarDecl());
     } while (
-      !this.check(TokenType.END_CLASS) &&
-      !this.check(TokenType.METHODS) &&
-      !this.check(TokenType.END_HEADER) &&
-      !this.check(TokenType.END_CODE)
+      this.peekNext().type == TokenType.EQUAL ||
+      this.peekNext().type == TokenType.COLON
     );
 
     return declarations;
@@ -480,10 +490,7 @@ export class KPLParser {
         parameters,
         position: this.getPosition(idToken),
       });
-    } while (
-      !this.check(TokenType.END_HEADER) &&
-      !this.check(TokenType.END_CODE)
-    );
+    } while (!this.isNewSection());
 
     // Return the first error declaration (the AST seems to expect just one)
     return errorDecls[0];
@@ -505,10 +512,7 @@ export class KPLParser {
         value: typeValue,
         position: this.getPosition(idToken),
       });
-    } while (
-      !this.check(TokenType.END_HEADER) &&
-      !this.check(TokenType.END_CODE)
-    );
+    } while (!this.isNewSection());
 
     return declarations;
   }
@@ -516,21 +520,22 @@ export class KPLParser {
   private parseEnum(): AST.EnumDecl {
     // We've already consumed the 'enum' token
     const startPosition = this.getPosition(this.previous!);
-  
-    // Parse enum name
+
+    // Parse required enum name
     const idToken = this.consume(TokenType.IDENTIFIER, "Expected enum name");
-  
+
     // Parse optional base value
     let baseValue: AST.Expression | undefined;
     if (this.match(TokenType.EQUAL)) {
       baseValue = this.parseExpr();
-      // After base value, we need to consume a comma before continuing
-      this.consume(TokenType.COMMA, "Expected ',' after enum base value");
     }
-  
+
     // Parse enum members
-    const members = this.parseIDList();
-  
+    let members: string[] = [];
+    if (this.match(TokenType.COMMA)) {
+      members = this.parseIDList();
+    }
+
     return {
       type: "EnumDecl",
       name: idToken.lexeme,
@@ -634,11 +639,17 @@ export class KPLParser {
     // We've already consumed the 'functions' token
     const protos: AST.FunctionProto[] = [];
 
+    // Check for initial required function proto
+    const isExternal = this.match(TokenType.EXTERNAL);
+
+    // Parse the function prototype
+    const proto = this.parseFunProto();
+    proto.isExternal = isExternal;
+
+    protos.push(proto);
+
     // Parse one or more function prototypes
-    while (
-      !this.check(TokenType.END_HEADER) &&
-      !this.check(TokenType.END_CODE)
-    ) {
+    while (!this.isNewSection()) {
       // Check for external modifier
       const isExternal = this.match(TokenType.EXTERNAL);
 
@@ -1964,6 +1975,15 @@ export class KPLParser {
       };
     }
 
+    if (this.match(TokenType.HEX)) {
+      return {
+        type: "LiteralExpression",
+        kind: "STRING",
+        value: this.previous!.literal,
+        position: startPosition,
+      };
+    }
+
     if (this.match(TokenType.CHAR_LITERAL)) {
       return {
         type: "LiteralExpression",
@@ -2090,15 +2110,17 @@ export class KPLParser {
 
   private isNewSection(): boolean {
     return (
-      this.match(TokenType.CONST) ||
-      this.match(TokenType.ERRORS) ||
-      this.match(TokenType.VAR) ||
-      this.match(TokenType.ENUM) ||
-      this.match(TokenType.TYPE) ||
-      this.match(TokenType.FUNCTIONS) ||
-      this.match(TokenType.INTERFACE) ||
-      this.match(TokenType.CLASS) ||
-      this.match(TokenType.BEHAVIOR) // For CodeFile
+      this.check(TokenType.CONST) ||
+      this.check(TokenType.ERRORS) ||
+      this.check(TokenType.VAR) ||
+      this.check(TokenType.ENUM) ||
+      this.check(TokenType.TYPE) ||
+      this.check(TokenType.FUNCTIONS) ||
+      this.check(TokenType.INTERFACE) ||
+      this.check(TokenType.CLASS) ||
+      this.check(TokenType.BEHAVIOR) ||
+      this.check(TokenType.END_CODE) ||
+      this.check(TokenType.END_HEADER)
     );
   }
 
@@ -2388,8 +2410,7 @@ export class KPLParser {
         ID '{' ID = Expr { , ID = Expr } '}'
 
     ArrayInit
-        ID '{' [ Expr of ] Expr
-        |  { , [ Expr of ] Expr } '}
+        ID '{' [ Expr of ] Expr { , [ Expr of ] Expr } '}
 
     LValue
         Expr

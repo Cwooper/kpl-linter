@@ -45,6 +45,8 @@ export class KPLManager {
       // Start tokenization
       const tokenizer = new Tokenizer(textContent);
       const tokens = tokenizer.tokenize();
+      console.log(uri.fsPath);
+      console.log(tokens);
       cacheEntry.tokens = tokens;
 
       // If tokenization succeeded, attempt parsing
@@ -54,9 +56,8 @@ export class KPLManager {
           const parser = new KPLParser(tokens);
           const ast = parser.parse();
           cacheEntry.ast = ast;
-          
-          console.log(uri.fsPath)
-          console.log(ast)
+
+          console.log(ast);
 
           // Clear any existing diagnostics if parsing succeeded
           this.diagnosticCollection.set(uri, []);

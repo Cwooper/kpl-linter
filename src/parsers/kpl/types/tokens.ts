@@ -96,6 +96,7 @@ export enum TokenType {
   // Literals
   INTEGER = "INTEGER", // e.g., 42, 0x1234ABCD
   DOUBLE = "DOUBLE", // e.g., 3.1415, 6.022e23
+  HEX = "HEX", // e.g., 0x45454545
   CHAR_LITERAL = "CHAR", // e.g., 'a', '\n'
   STRING_LITERAL = "STRING", // e.g., "hello", "\t\n"
   IDENTIFIER = "IDENTIFIER", // e.g., x, myName, MAX_SIZE
