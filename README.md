@@ -49,6 +49,11 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Release Notes
 
+### 0.1.0
+
+Added `kpl` autocompletion features, fixed `clr` command
+
+
 ### 0.0.9
 
 Added constants checking to the KPL language syntax highlighting
@@ -96,7 +101,8 @@ Initial release of KPL Language Support:
 
 Features
 
-- [ ] Auto-closing statemtnts (e.g., `if` and `endIf`)
+- [x] Auto-closing statements (e.g., `if` and `endIf`)
+- [x] Auto-completion for common statements/fields
 - [ ] `kpl` formatter
 - [ ] Parse `kpl` into an ast
   - [ ] `tokenizer` with look aheads based on rules for `kpl` CFL

@@ -3,6 +3,10 @@
 All notable changes to the KPL Language Support extension will be documented in
 this file.
 
+## [0.1.0] 2025-01-31
+
+Added `kpl` autocompletion features, fixed `clr` command
+
 ## [0.0.9] 2025-01-28
 
 Added constants highlighting to the KPL language syntax highlighting
