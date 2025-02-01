@@ -8,6 +8,7 @@ import {
 import { BlitzParser } from "./parsers/blitz/parser";
 import { WorkspaceManager } from "./workspace/workspaceManager";
 import { KPLCompletionProvider } from "./providers/kplCompletionProvider";
+import { KPLManager } from "./parsers/kpl/manager";
 
 export function activate(context: vscode.ExtensionContext) {
   // Initialize workspace manager
@@ -22,22 +23,22 @@ export function activate(context: vscode.ExtensionContext) {
     )
   );
 
-  // Watch for KPL file changes
-  const fileWatcher = workspaceManager.watchKPLFiles(async (uri) => {
-    // TODO Handle file changes here
-    // You can trigger parsing, validation, etc.
-    console.log(`KPL file changed: ${uri.fsPath}`);
-  });
-  context.subscriptions.push(fileWatcher);
-
-  // Initialize KPL file parsing
-  workspaceManager.findKPLFiles().then((files) => {
-    files.forEach(async (file) => {
-      const content = await workspaceManager.getFileContent(file);
-      // TODO initialize parsing of the files
-      console.log(`Found KPL file: ${file.fsPath}`);
+  if (vscode.workspace.workspaceFolders?.length) {
+    const manager = new KPLManager(
+      vscode.workspace.workspaceFolders[0].uri.fsPath
+    );
+    // Watch for KPL file changes
+    const fileWatcher = workspaceManager.watchKPLFiles(async (uri) => {
+      await manager.processFile(uri);
     });
-  });
+
+    // Initialize KPL file parsing
+    workspaceManager.findKPLFiles().then((files) => {
+      files.forEach(async (file) => {
+        await manager.processFile(file);
+      });
+    });
+  }
 
   // Existing Blitz-related registrations
   const parser = new BlitzParser();
