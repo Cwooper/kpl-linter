@@ -408,7 +408,7 @@ export class KPLParser {
     const declarations: AST.ConstantDecl[] = [];
 
     // Parse one or more constant declarations
-    while (this.peekNext().type == TokenType.EQUAL) {
+    while (this.peekNext().type === TokenType.EQUAL) {
       declarations.push(this.parseConstant());
     }
 
@@ -436,7 +436,6 @@ export class KPLParser {
 
   private parseVarDecl(): AST.VarDecl {
     // Parse ID list
-    // TODO, parse a single var first if it exists
     const names = this.parseIDList();
 
     // Parse type annotation
@@ -465,10 +464,7 @@ export class KPLParser {
     // Parse one or more variable declarations
     do {
       declarations.push(this.parseVarDecl());
-    } while (
-      this.peekNext().type == TokenType.EQUAL ||
-      this.peekNext().type == TokenType.COLON
-    );
+    } while (this.peekNext().type === TokenType.COLON);
 
     return declarations;
   }
@@ -1419,15 +1415,6 @@ export class KPLParser {
     return types;
   }
 
-  private parseDimension(): AST.Expression | null {
-    // Handle dynamic size
-    if (this.match(TokenType.STAR)) {
-      return null;
-    }
-    // Otherwise parse expression for fixed size
-    return this.parseExpr();
-  }
-
   private parseConstructor(): AST.Constructor {
     const startPosition = this.getPosition(this.current!);
 
@@ -1436,26 +1423,21 @@ export class KPLParser {
 
     let initialization: AST.ConstructorInit;
 
-    // Check if we have initialization
-    if (this.match(TokenType.IDENTIFIER)) {
-      // Look ahead to determine if this is a class/record or array initialization
-      if (this.check(TokenType.LEFT_BRACE)) {
-        // We need to backup the identifier for the initialization parser
-        this.currentIndex--;
-        this.current = this.tokens[this.currentIndex - 1];
+    // Check for ClassRecordInit or ArrayInit
+    if (this.peekNext().type === TokenType.LEFT_BRACE) {
+      this.advance();
+      this.advance();
+      if (this.peekNext().type == TokenType.EQUAL) {
+        // ClassRecordInit
+        this.currentIndex = this.currentIndex - 2;
+        this.current = this.tokens[this.currentIndex - 2];
         initialization = this.parseClassRecordInit();
       } else {
-        // We need to backup the identifier for the initialization parser
-        this.currentIndex--;
-        this.current = this.tokens[this.currentIndex - 1];
+        // ArrayInit
+        this.currentIndex = this.currentIndex - 2;
+        this.current = this.tokens[this.currentIndex - 2];
         initialization = this.parseArrayInit();
       }
-    } else {
-      // No initialization provided
-      throw this.error(
-        this.current!,
-        "Expected initialization after constructor type"
-      );
     }
 
     return {
@@ -1957,7 +1939,7 @@ export class KPLParser {
       };
     }
 
-    if (this.match(TokenType.INTEGER)) {
+    if (this.match(TokenType.INTEGER_LITERAL)) {
       return {
         type: "LiteralExpression",
         kind: "INTEGER",
@@ -1966,7 +1948,7 @@ export class KPLParser {
       };
     }
 
-    if (this.match(TokenType.DOUBLE)) {
+    if (this.match(TokenType.DOUBLE_LITERAL)) {
       return {
         type: "LiteralExpression",
         kind: "DOUBLE",
@@ -1975,7 +1957,7 @@ export class KPLParser {
       };
     }
 
-    if (this.match(TokenType.HEX)) {
+    if (this.match(TokenType.HEX_LITERAL)) {
       return {
         type: "LiteralExpression",
         kind: "STRING",

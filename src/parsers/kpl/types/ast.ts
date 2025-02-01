@@ -465,7 +465,7 @@ export interface Constructor extends Node {
   initialization: ConstructorInit;
 }
 
-export type ConstructorInit = ClassRecordInit | ArrayInit;
+export type ConstructorInit = ClassRecordInit | ArrayInit | undefined;
 
 export interface ClassRecordInit extends Node {
   type: "ClassRecordInit";

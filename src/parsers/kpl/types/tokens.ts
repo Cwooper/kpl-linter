@@ -31,6 +31,7 @@ export enum TokenType {
   DEBUG = "DEBUG",
   DEFAULT = "DEFAULT",
   DO = "DO",
+  DOUBLE = "DOUBLE",
   ELSE = "ELSE",
   ELSE_IF = "ELSE_IF",
   END_BEHAVIOR = "END_BEHAVIOR",
@@ -94,11 +95,11 @@ export enum TokenType {
   WHILE = "WHILE",
 
   // Literals
-  INTEGER = "INTEGER", // e.g., 42, 0x1234ABCD
-  DOUBLE = "DOUBLE", // e.g., 3.1415, 6.022e23
-  HEX = "HEX", // e.g., 0x45454545
-  CHAR_LITERAL = "CHAR", // e.g., 'a', '\n'
-  STRING_LITERAL = "STRING", // e.g., "hello", "\t\n"
+  INTEGER_LITERAL = "INTEGER_LITERAL", // e.g., 42, 0x1234ABCD
+  DOUBLE_LITERAL = "DOUBLE_LITERAL", // e.g., 3.1415, 6.022e23
+  HEX_LITERAL = "HEX_LITERAL", // e.g., 0x45454545
+  CHAR_LITERAL = "CHAR_LITERAL", // e.g., 'a', '\n'
+  STRING_LITERAL = "STRING_LITERAL", // e.g., "hello", "\t\n"
   IDENTIFIER = "IDENTIFIER", // e.g., x, myName, MAX_SIZE
 
   // Operators - binary

@@ -262,10 +262,10 @@ export class Tokenizer {
       }
 
       const value = parseFloat(this.source.substring(this.start, this.current));
-      this.addToken(TokenType.DOUBLE, value);
+      this.addToken(TokenType.DOUBLE_LITERAL, value);
     } else {
       const value = parseInt(this.source.substring(this.start, this.current));
-      this.addToken(TokenType.INTEGER, value);
+      this.addToken(TokenType.INTEGER_LITERAL, value);
     }
   }
 
@@ -280,7 +280,7 @@ export class Tokenizer {
     const value = parseInt(hexStr, 16);
 
     // Add the hexadecimal token
-    this.addToken(TokenType.HEX, value);
+    this.addToken(TokenType.HEX_LITERAL, value);
   }
 
   private isHexDigit(c: string): boolean {
