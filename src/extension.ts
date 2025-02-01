@@ -27,13 +27,21 @@ export function activate(context: vscode.ExtensionContext) {
     const manager = new KPLManager(
       vscode.workspace.workspaceFolders[0].uri.fsPath
     );
+
+    // Add to disposables
+    context.subscriptions.push(manager);
+
     // Watch for KPL file changes
-    const fileWatcher = workspaceManager.watchKPLFiles(async (uri) => {
+    const fileWatcher = vscode.workspace.createFileSystemWatcher("**/*.{k,h}");
+    fileWatcher.onDidChange(async (uri) => {
+      await manager.processFile(uri);
+    });
+    fileWatcher.onDidCreate(async (uri) => {
       await manager.processFile(uri);
     });
 
-    // Initialize KPL file parsing
-    workspaceManager.findKPLFiles().then((files) => {
+    // Initial processing of files
+    vscode.workspace.findFiles("**/*.{k,h}").then((files) => {
       files.forEach(async (file) => {
         await manager.processFile(file);
       });

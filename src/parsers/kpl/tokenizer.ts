@@ -20,6 +20,7 @@ export class Tokenizer {
   private current = 0; // Current position in source
   private line = 1; // Current line number
   private column = 1; // Current column number
+  private startColumn = 0; // Column where current token starts
   private errors: TokenizerError[] = [];
 
   constructor(source: string) {
@@ -32,8 +33,9 @@ export class Tokenizer {
       try {
         this.skipWhitespace(); // skip whitespace before setting start
         if (this.isAtEnd()) break; // stop at EOF
-        
-        this.start = this.current; 
+
+        this.start = this.current;
+        this.startColumn = this.column; // Save starting column
         this.scanToken();
       } catch (error) {
         if (error instanceof TokenizerError) {
@@ -375,7 +377,7 @@ export class Tokenizer {
   // Handles newline characters and updates line/column counts
   private handleNewline(): void {
     this.line++;
-    this.column = 1;
+    this.column = 0;
   }
 
   // Adds a token to the token list
@@ -387,7 +389,7 @@ export class Tokenizer {
         text,
         literal,
         this.line,
-        this.column - text.length,
+        this.startColumn,
         this.start
       )
     );
@@ -398,7 +400,7 @@ export class Tokenizer {
     const error = new TokenizerError(
       message,
       this.line,
-      this.column,
+      this.startColumn,
       this.current
     );
     this.errors.push(error);
@@ -414,11 +416,11 @@ export class Tokenizer {
         case "\r":
         case "\t":
           this.advance();
-          break
+          break;
         case "\n":
           this.handleNewline();
           this.advance();
-          break
+          break;
         default:
           return;
       }

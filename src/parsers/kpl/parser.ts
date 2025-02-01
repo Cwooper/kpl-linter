@@ -17,21 +17,264 @@ export class ParseError extends Error {
 
 // This will always ignore/skip over comments
 export class KPLParser {
+  private current: Token | null = null;
+  private previous: Token | null = null;
+  private tokens: Token[] = [];
+  private currentIndex: number = 0;
+
+  constructor(tokens: Token[]) {
+    // Filter out comments during initialization
+    this.tokens = tokens.filter(token => token.type !== TokenType.COMMENT);
+    this.advance(); // Load first token
+}
+
+  parse(): AST.Program {
+    try {
+      return this.parseProgram();
+    } catch (error) {
+      if (error instanceof ParseError) {
+        // Handle parse error
+        console.error(error.message);
+        // You might want to return a partial AST or throw
+        throw error;
+      }
+      throw error;
+    }
+  }
+
+  // Initial parsing methods
+  private parseProgram(): AST.Program {
+    // Check if it's a header or code file based on first tokens
+    const declarations = [];
+
+    while (!this.isAtEnd()) {
+      if (this.match(TokenType.HEADER)) {
+        declarations.push(this.parseHeaderFile());
+      } else if (this.match(TokenType.CODE)) {
+        declarations.push(this.parseCodeFile());
+      } else {
+        throw this.error(
+          this.current!,
+          "Expected 'header' or 'code' declaration"
+        );
+      }
+    }
+
+    return {
+      type: "Program",
+      files: declarations,
+      position: this.getPosition(this.previous!),
+    };
+  }
+
+  private parseHeaderFile(): AST.HeaderFile {
+    // We've already consumed the 'header' token in parseProgram()
+
+    // Parse the header name
+    const idToken = this.consume(TokenType.IDENTIFIER, "Expected header name");
+    const startPosition = this.getPosition(idToken);
+
+    const declarations: AST.Declaration[] = [];
+    let uses: AST.Uses | undefined;
+
+    // Parse declarations until we hit endHeader
+    while (!this.isAtEnd() && !this.check(TokenType.END_HEADER)) {
+      if (this.match(TokenType.USES)) {
+        if (uses) {
+          throw this.error(
+            this.previous!,
+            "Multiple 'uses' declarations in header"
+          );
+        }
+        // uses = this.parseUses();
+        // TODO
+        console.log("Parsing Uses")
+        continue;
+      }
+
+      // Parse other declarations
+      if (this.match(TokenType.CONST)) {
+        // declarations.push(this.parseConstants());
+        // TODO uncomment
+        console.log("Parsing constants")
+      } else { // TODO add more
+        throw this.error(
+          this.current!,
+          "Expected declaration (const, errors, class, etc.)"
+        );
+      }
+    }
+
+    // Consume the endHeader token
+    this.consume(TokenType.END_HEADER, "Expected 'endHeader'");
+
+    return {
+      type: "HeaderFile",
+      id: idToken.lexeme,
+      uses: uses,
+      declarations: declarations,
+      position: startPosition,
+    };
+  }
+
+  private parseCodeFile(): AST.CodeFile {
+    // We've already consumed the 'code' token in parseProgram()
+
+    // Parse the code file name
+    const idToken = this.consume(
+      TokenType.IDENTIFIER,
+      "Expected code file name"
+    );
+    const startPosition = this.getPosition(idToken);
+
+    const declarations: AST.Declaration[] = [];
+
+    // Parse declarations until we hit endCode
+    while (!this.isAtEnd() && !this.check(TokenType.END_CODE)) {
+      if (this.match(TokenType.CONST)) {
+        // declarations.push(this.parseConstants());
+        console.log("Parsing constants")
+        // TODO: add more
+      } else {
+        throw this.error(
+          this.current!,
+          "Expected declaration (const, function, class, behavior, etc.)"
+        );
+      }
+    }
+
+    // Consume the endCode token
+    this.consume(TokenType.END_CODE, "Expected 'endCode'");
+
+    return {
+      type: "CodeFile",
+      id: idToken.lexeme,
+      declarations: declarations,
+      position: startPosition,
+    };
+  }
+
+// TODO: uncomment
+//   private parseUses(): AST.Uses {
+//     // We've already consumed the 'uses' token
+//     const startPosition = this.getPosition(this.previous!);
+//     const packages: AST.Package[] = [];
+
+//     // Parse first package (required)
+//     packages.push(this.parseOtherPackage());
+
+//     // Parse additional packages separated by commas
+//     while (this.match(TokenType.COMMA)) {
+//       packages.push(this.parseOtherPackage());
+//     }
+
+//     return {
+//       type: "Uses",
+//       packages: packages,
+//       position: startPosition,
+//     };
+//   }
+
+  // --------------------------- Helper Methods ---------------------------
+
+  // Advance a single token
+  private advance(): Token {
+    this.previous = this.current;
+    if (this.currentIndex < this.tokens.length) {
+      this.current = this.tokens[this.currentIndex++];
+    }
+    return this.previous!;
+  }
+
+  // Check if the current token is equal to this type
+  private check(type: TokenType): boolean {
+    if (this.isAtEnd()) return false;
+    return this.current!.type === type;
+  }
+
+  // Check if the current token is any of these tokens
+  private match(...types: TokenType[]): boolean {
+    for (const type of types) {
+      if (this.check(type)) {
+        this.advance();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Consume the current token of 'type' and advance
+  private consume(type: TokenType, message: string): Token {
+    if (this.check(type)) return this.advance();
+    throw this.error(this.current!, message);
+  }
+
+  private isAtEnd(): boolean {
+    return this.current!.type === TokenType.EOF;
+  }
+
+  private error(token: Token, message: string): ParseError {
+    return new ParseError(message, token);
+  }
+
+  private getPosition(token: Token): AST.Position {
+    return {
+      line: token.line,
+      column: token.column,
+      position: token.position,
+      file: "filename", // You'll need to track this
+    };
+  }
+
+ private parseInterface(): void {}
+ private parseClass(): void {}
+ private parseBehavior(): void {}
+ private parseOtherPackage(): void {}
+ private parseRename(): void {}
+ private parseTypeParms(): void {}
+ private parseConstants(): void {}
+ private parseDecl(): void {}
+ private parseVarDecl(): void {}
+ private parseVarDecls(): void {}
+ private parseErrors(): void {}
+ private parseTypeDefs(): void {}
+ private parseEnum(): void {}
+ private parseIDList(): void {}
+ private parseArgList(): void {}
+ private parseParmList(): void {}
+ private parseFunProto(): void {}
+ private parseFunctionProtos(): void {}
+ private parseFunction(): void {}
+ private parseNamelessFunction(): void {}
+ private parseMethProto(): void {}
+ private parseMethod(): void {}
+ private parseStmtList(): void {}
+ private parseStatement(): void {}
+ private parseType(): void {}
+ private parseNamedType(): void {}
+ private parseTypeList(): void {}
+ private parseDimension(): void {}
+ private parseConstructor(): void {}
+ private parseClassRecordInit(): void {}
+ private parseArrayInit(): void {}
+ private parseLValue(): void {}
+ private parseExpressions(): void {}
+  
   /*
-    Repetition of zero-or-more:
+    repetition of zero-or-more:
     { }
-    One-or-more
+    one-or-more
     { }+
-    Store Material:
+    store Material:
     < >
-    Optional Material:
+    optional Material:
     [ ]
-    Multiple Options:
+    multiple Options:
     |
 
-    Data to store:
+    data to store:
         Header and Code file IDs
-    Data to store per file:
+    data to store per file:
         uses [packageID]
         constants <constantID, Value>
         errors [errorID]
