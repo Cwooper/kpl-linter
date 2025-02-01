@@ -435,6 +435,8 @@ export class KPLParser {
   }
 
   private parseVarDecl(): AST.VarDecl {
+    const startPosition = this.getPosition(this.current!);
+
     // Parse ID list
     const names = this.parseIDList();
 
@@ -445,7 +447,7 @@ export class KPLParser {
     // Parse optional initializer
     let initializer: AST.Expression | undefined;
     if (this.match(TokenType.EQUAL)) {
-      initializer = this.parseExpr();
+      initializer = this.parseExpr2(); // Use parseExpr2 for initializer expressions
     }
 
     return {
@@ -453,7 +455,7 @@ export class KPLParser {
       names,
       varType,
       initializer,
-      position: this.getPosition(this.previous!),
+      position: startPosition,
     };
   }
 
@@ -1425,7 +1427,7 @@ export class KPLParser {
 
     // Check for ClassRecordInit or ArrayInit
     if (this.check(TokenType.LEFT_BRACE)) {
-        this.advance()
+      this.advance();
       if (this.peekNext().type == TokenType.EQUAL) {
         // ClassRecordInit if '=' after brace
         this.currentIndex--;
@@ -1450,7 +1452,10 @@ export class KPLParser {
   private parseClassRecordInit(): AST.ClassRecordInit {
     const startPosition = this.getPosition(this.current!);
 
-    this.consume(TokenType.LEFT_BRACE, "Expected '{' after class/record initialization");
+    this.consume(
+      TokenType.LEFT_BRACE,
+      "Expected '{' after class/record initialization"
+    );
 
     const initializers: { field: string; value: AST.Expression }[] = [];
 
@@ -1487,7 +1492,10 @@ export class KPLParser {
   private parseArrayInit(): AST.ArrayInit {
     const startPosition = this.getPosition(this.current!);
 
-    this.consume(TokenType.LEFT_BRACE, "Expected '{' after array initialization");
+    this.consume(
+      TokenType.LEFT_BRACE,
+      "Expected '{' after array initialization"
+    );
 
     const initializers: { index?: AST.Expression; value: AST.Expression }[] =
       [];
@@ -1530,15 +1538,12 @@ export class KPLParser {
 
   // Main expression parser that handles all precedence levels
   private parseExpr(): AST.Expression {
-    return this.parseKeywordMessage();
-  }
+    let expr = this.parseExpr2();
 
-  // Precedence level methods from lowest to highest
-  private parseKeywordMessage(): AST.Expression {
-    let expr = this.parseInfixOp();
-
-    // Handle keyword messages (e.g., "at:x put:y")
-    if (this.check(TokenType.IDENTIFIER)) {
+    while (
+      this.check(TokenType.IDENTIFIER) &&
+      this.peekNext().type === TokenType.COLON
+    ) {
       const segments: { message: string; arguments: AST.Expression[] }[] = [];
 
       while (
@@ -1547,7 +1552,7 @@ export class KPLParser {
       ) {
         const messageToken = this.advance();
         this.advance(); // consume colon
-        const arg = this.parseInfixOp();
+        const arg = this.parseExpr2();
         segments.push({
           message: messageToken.lexeme,
           arguments: [arg],
@@ -1555,7 +1560,7 @@ export class KPLParser {
       }
 
       if (segments.length > 0) {
-        return {
+        expr = {
           type: "MessageExpression",
           receiver: expr,
           message: segments[0].message,
@@ -1568,15 +1573,15 @@ export class KPLParser {
     return expr;
   }
 
-  private parseInfixOp(): AST.Expression {
-    let expr = this.parseLogicalOr();
+  // Modified parseExpr2 for operator expressions
+  private parseExpr2(): AST.Expression {
+    let expr = this.parseExpr3();
 
     while (
-      this.check(TokenType.IDENTIFIER) &&
-      this.isInfixOperator(this.current!.lexeme)
+      this.check(TokenType.IDENTIFIER)
     ) {
       const operator = this.advance().lexeme;
-      const right = this.parseLogicalOr();
+      const right = this.parseExpr3();
       expr = {
         type: "BinaryExpression",
         operator,
@@ -1589,12 +1594,12 @@ export class KPLParser {
     return expr;
   }
 
-  private parseLogicalOr(): AST.Expression {
-    let expr = this.parseLogicalAnd();
+  private parseExpr3(): AST.Expression {
+    let expr = this.parseExpr5();
 
     while (this.match(TokenType.LOGICAL_OR)) {
       const operator = this.previous!.lexeme;
-      const right = this.parseLogicalAnd();
+      const right = this.parseExpr5();
       expr = {
         type: "BinaryExpression",
         operator,
@@ -1607,12 +1612,12 @@ export class KPLParser {
     return expr;
   }
 
-  private parseLogicalAnd(): AST.Expression {
-    let expr = this.parseBitwiseOr();
+  private parseExpr5(): AST.Expression {
+    let expr = this.parseExpr6();
 
     while (this.match(TokenType.LOGICAL_AND)) {
       const operator = this.previous!.lexeme;
-      const right = this.parseBitwiseOr();
+      const right = this.parseExpr6();
       expr = {
         type: "BinaryExpression",
         operator,
@@ -1625,12 +1630,12 @@ export class KPLParser {
     return expr;
   }
 
-  private parseBitwiseOr(): AST.Expression {
-    let expr = this.parseBitwiseXor();
+  private parseExpr6(): AST.Expression {
+    let expr = this.parseExpr7();
 
     while (this.match(TokenType.OR)) {
       const operator = this.previous!.lexeme;
-      const right = this.parseBitwiseXor();
+      const right = this.parseExpr7();
       expr = {
         type: "BinaryExpression",
         operator,
@@ -1643,12 +1648,12 @@ export class KPLParser {
     return expr;
   }
 
-  private parseBitwiseXor(): AST.Expression {
-    let expr = this.parseBitwiseAnd();
+  private parseExpr7(): AST.Expression {
+    let expr = this.parseExpr8();
 
     while (this.match(TokenType.XOR)) {
       const operator = this.previous!.lexeme;
-      const right = this.parseBitwiseAnd();
+      const right = this.parseExpr8();
       expr = {
         type: "BinaryExpression",
         operator,
@@ -1661,12 +1666,12 @@ export class KPLParser {
     return expr;
   }
 
-  private parseBitwiseAnd(): AST.Expression {
-    let expr = this.parseEquality();
+  private parseExpr8(): AST.Expression {
+    let expr = this.parseExpr9();
 
     while (this.match(TokenType.AND)) {
       const operator = this.previous!.lexeme;
-      const right = this.parseEquality();
+      const right = this.parseExpr9();
       expr = {
         type: "BinaryExpression",
         operator,
@@ -1679,12 +1684,12 @@ export class KPLParser {
     return expr;
   }
 
-  private parseEquality(): AST.Expression {
-    let expr = this.parseComparison();
+  private parseExpr9(): AST.Expression {
+    let expr = this.parseExpr10();
 
     while (this.match(TokenType.EQUAL_EQUAL, TokenType.BANG_EQUAL)) {
       const operator = this.previous!.lexeme;
-      const right = this.parseComparison();
+      const right = this.parseExpr10();
       expr = {
         type: "BinaryExpression",
         operator,
@@ -1697,8 +1702,8 @@ export class KPLParser {
     return expr;
   }
 
-  private parseComparison(): AST.Expression {
-    let expr = this.parseShift();
+  private parseExpr10(): AST.Expression {
+    let expr = this.parseExpr11();
 
     while (
       this.match(
@@ -1709,7 +1714,7 @@ export class KPLParser {
       )
     ) {
       const operator = this.previous!.lexeme;
-      const right = this.parseShift();
+      const right = this.parseExpr11();
       expr = {
         type: "BinaryExpression",
         operator,
@@ -1722,8 +1727,8 @@ export class KPLParser {
     return expr;
   }
 
-  private parseShift(): AST.Expression {
-    let expr = this.parseAdditive();
+  private parseExpr11(): AST.Expression {
+    let expr = this.parseExpr12();
 
     while (
       this.match(
@@ -1733,7 +1738,7 @@ export class KPLParser {
       )
     ) {
       const operator = this.previous!.lexeme;
-      const right = this.parseAdditive();
+      const right = this.parseExpr12();
       expr = {
         type: "BinaryExpression",
         operator,
@@ -1746,12 +1751,12 @@ export class KPLParser {
     return expr;
   }
 
-  private parseAdditive(): AST.Expression {
-    let expr = this.parseMultiplicative();
+  private parseExpr12(): AST.Expression {
+    let expr = this.parseExpr13();
 
     while (this.match(TokenType.PLUS, TokenType.MINUS)) {
       const operator = this.previous!.lexeme;
-      const right = this.parseMultiplicative();
+      const right = this.parseExpr13();
       expr = {
         type: "BinaryExpression",
         operator,
@@ -1764,12 +1769,12 @@ export class KPLParser {
     return expr;
   }
 
-  private parseMultiplicative(): AST.Expression {
-    let expr = this.parseUnary();
+  private parseExpr13(): AST.Expression {
+    let expr = this.parseExpr15();
 
     while (this.match(TokenType.STAR, TokenType.SLASH, TokenType.PERCENT)) {
       const operator = this.previous!.lexeme;
-      const right = this.parseUnary();
+      const right = this.parseExpr15();
       expr = {
         type: "BinaryExpression",
         operator,
@@ -1782,17 +1787,13 @@ export class KPLParser {
     return expr;
   }
 
-  private parseUnary(): AST.Expression {
+  private parseExpr15(): AST.Expression {
+    // Handle unary operators (OPERATOR Expr15)
     if (
-      this.match(
-        TokenType.MINUS,
-        TokenType.BANG,
-        TokenType.STAR,
-        TokenType.AND
-      )
+      this.check(TokenType.IDENTIFIER)
     ) {
-      const operator = this.previous!.lexeme;
-      const operand = this.parseUnary();
+      const operator = this.advance().lexeme;
+      const operand = this.parseExpr15();
       return {
         type: "UnaryExpression",
         operator,
@@ -1801,20 +1802,22 @@ export class KPLParser {
       };
     }
 
-    return this.parsePostfix();
+    // If no operator, continue to Expr16
+    return this.parseExpr16();
   }
 
-  private parsePostfix(): AST.Expression {
-    let expr = this.parsePrimary();
+  private parseExpr16(): AST.Expression {
+    let expr = this.parseExpr17();
 
     while (true) {
       if (this.match(TokenType.DOT)) {
-        // Handle method calls and field access
+        // Parse .ID or .ID ArgList
         const name = this.consume(
           TokenType.IDENTIFIER,
           "Expected identifier after '.'"
         ).lexeme;
         if (this.check(TokenType.LEFT_PAREN)) {
+          // Method call with arguments
           const args = this.parseArgList();
           expr = {
             type: "MessageExpression",
@@ -1824,6 +1827,7 @@ export class KPLParser {
             position: expr.position,
           };
         } else {
+          // Field access
           expr = {
             type: "FieldAccessExpression",
             object: expr,
@@ -1831,20 +1835,8 @@ export class KPLParser {
             position: expr.position,
           };
         }
-      } else if (this.match(TokenType.LEFT_BRACKET)) {
-        // Array access
-        const indices: AST.Expression[] = [this.parseExpr()];
-        while (this.match(TokenType.COMMA)) {
-          indices.push(this.parseExpr());
-        }
-        this.consume(TokenType.RIGHT_BRACKET, "Expected ']' after array index");
-        expr = {
-          type: "ArrayAccessExpression",
-          array: expr,
-          indices,
-          position: expr.position,
-        };
       } else if (this.match(TokenType.AS_PTR_TO)) {
+        // Handle asPtrTo Type
         const targetType = this.parseType();
         expr = {
           type: "TypeCastExpression",
@@ -1854,6 +1846,7 @@ export class KPLParser {
           position: expr.position,
         };
       } else if (this.match(TokenType.AS_INTEGER)) {
+        // Handle asInteger
         expr = {
           type: "TypeCastExpression",
           kind: "asInteger",
@@ -1861,16 +1854,15 @@ export class KPLParser {
           position: expr.position,
         };
       } else if (this.match(TokenType.ARRAY_SIZE)) {
+        // Handle arraySize
         expr = {
           type: "ArrayAccessExpression",
           array: expr,
-          indices: [],
+          indices: [], // Empty indices indicates arraySize
           position: expr.position,
         };
-      } else if (
-        this.match(TokenType.IS_INSTANCE_OF) ||
-        this.match(TokenType.IS_KIND_OF)
-      ) {
+      } else if (this.match(TokenType.IS_INSTANCE_OF, TokenType.IS_KIND_OF)) {
+        // Handle isInstanceOf Type and isKindOf Type
         const kind =
           this.previous!.type === TokenType.IS_INSTANCE_OF
             ? "isInstanceOf"
@@ -1883,6 +1875,22 @@ export class KPLParser {
           checkType,
           position: expr.position,
         };
+      } else if (this.match(TokenType.LEFT_BRACKET)) {
+        // Handle array access [Expr {, Expr}]
+        const indices: AST.Expression[] = [this.parseExpr()];
+        while (this.match(TokenType.COMMA)) {
+          indices.push(this.parseExpr());
+        }
+        this.consume(
+          TokenType.RIGHT_BRACKET,
+          "Expected ']' after array indices"
+        );
+        expr = {
+          type: "ArrayAccessExpression",
+          array: expr,
+          indices,
+          position: expr.position,
+        };
       } else {
         break;
       }
@@ -1891,16 +1899,14 @@ export class KPLParser {
     return expr;
   }
 
-  private parsePrimary(): AST.Expression {
+  private parseExpr17(): AST.Expression {
     const startPosition = this.getPosition(this.current!);
 
-    if (this.match(TokenType.TRUE, TokenType.FALSE)) {
-      return {
-        type: "LiteralExpression",
-        kind: this.previous!.type === TokenType.TRUE ? "true" : "false",
-        value: this.previous!.type === TokenType.TRUE,
-        position: startPosition,
-      };
+    if (this.match(TokenType.LEFT_PAREN)) {
+      // Handle (Expr)
+      const expr = this.parseExpr();
+      this.consume(TokenType.RIGHT_PAREN, "Expected ')' after expression");
+      return expr;
     }
 
     if (this.match(TokenType.NULL)) {
@@ -1908,6 +1914,15 @@ export class KPLParser {
         type: "LiteralExpression",
         kind: "null",
         value: null,
+        position: startPosition,
+      };
+    }
+
+    if (this.match(TokenType.TRUE, TokenType.FALSE)) {
+      return {
+        type: "LiteralExpression",
+        kind: this.previous!.type === TokenType.TRUE ? "true" : "false",
+        value: this.previous!.type === TokenType.TRUE,
         position: startPosition,
       };
     }
@@ -1948,15 +1963,6 @@ export class KPLParser {
       };
     }
 
-    if (this.match(TokenType.HEX_LITERAL)) {
-      return {
-        type: "LiteralExpression",
-        kind: "STRING",
-        value: this.previous!.literal,
-        position: startPosition,
-      };
-    }
-
     if (this.match(TokenType.CHAR_LITERAL)) {
       return {
         type: "LiteralExpression",
@@ -1975,9 +1981,20 @@ export class KPLParser {
       };
     }
 
+    if (this.match(TokenType.FUNCTION)) {
+      // Convert NamelessFunctionDecl to Expression
+      const namelessFun = this.parseNamelessFunction();
+      return {
+        type: "NamelessFunctionExpression",
+        function: namelessFun,
+        position: startPosition,
+      };
+    }
+
     if (this.match(TokenType.IDENTIFIER)) {
       const name = this.previous!.lexeme;
       if (this.check(TokenType.LEFT_PAREN)) {
+        // Function call
         const args = this.parseArgList();
         return {
           type: "CallExpression",
@@ -1990,20 +2007,11 @@ export class KPLParser {
           position: startPosition,
         };
       }
+      // Simple identifier
       return {
         type: "IdentifierExpression",
         name,
         position: startPosition,
-      };
-    }
-
-    if (this.match(TokenType.FUNCTION)) {
-      // Convert NamelessFunctionDecl to Expression
-      const namelessFun = this.parseNamelessFunction();
-      return {
-        type: "NamelessFunctionExpression",
-        function: namelessFun,
-        position: namelessFun.position,
       };
     }
 
@@ -2031,20 +2039,7 @@ export class KPLParser {
       };
     }
 
-    if (this.match(TokenType.LEFT_PAREN)) {
-      const expr = this.parseExpr();
-      this.consume(TokenType.RIGHT_PAREN, "Expected ')' after expression");
-      return expr;
-    }
-
     throw this.error(this.current!, "Expected expression");
-  }
-
-  // Helper method to check if an identifier is an infix operator
-  private isInfixOperator(identifier: string): boolean {
-    // Add your custom infix operators here
-    const infixOperators = new Set(["plus", "minus", "times", "dividedBy"]);
-    return infixOperators.has(identifier);
   }
 
   private parseOperator(errorMessage: string): string {
