@@ -1,9 +1,8 @@
-// kpl ast types
-
 // Base types for all AST nodes
 export interface Position {
   line: number;
   column: number;
+  position: number; // Added position for exact location
   file: string;
 }
 
@@ -94,35 +93,60 @@ export interface TypeDecl extends Node {
   value: Type;
 }
 
+// Types
+export type Type =
+  | BasicType
+  | PointerType
+  | RecordType
+  | ArrayType
+  | FunctionType
+  | NamedType;
+
+export interface BasicType extends Node {
+  type: "BasicType";
+  kind: "char" | "int" | "double" | "bool" | "void" | "typeOfNull" | "anyType";
+}
+
+export interface PointerType extends Node {
+  type: "PointerType";
+  elementType: Type;
+}
+
+export interface RecordType extends Node {
+  type: "RecordType";
+  fields: VarDecl[];
+}
+
+export interface ArrayType extends Node {
+  type: "ArrayType";
+  dimensions: (Expression | null)[]; // null for dynamic size *
+  elementType: Type;
+}
+
+export interface FunctionType extends Node {
+  type: "FunctionType";
+  parameters: Type[];
+  returnType?: Type;
+}
+
+export interface NamedType extends Node {
+  type: "NamedType";
+  name: string;
+  typeArguments?: Type[];
+}
+
+// Parameters and TypeParameters
 export interface Parameter extends Node {
   type: "Parameter";
   name: string;
   paramType: Type;
 }
 
-// Types
-export interface Type extends Node {
-  type: "Type";
-  kind: TypeKind;
+export interface TypeParameter extends Node {
+  type: "TypeParameter";
+  name: string;
+  constraint: Type;
 }
-
-export type TypeKind =
-  | {
-      kind: "Basic";
-      basicType:
-        | "char"
-        | "int"
-        | "double"
-        | "bool"
-        | "void"
-        | "typeOfNull"
-        | "anyType";
-    }
-  | { kind: "Pointer"; elementType: Type }
-  | { kind: "Record"; fields: VarDecl[] }
-  | { kind: "Array"; dimensions: (Expression | null)[]; elementType: Type }
-  | { kind: "Function"; parameters: Type[]; returnType?: Type }
-  | { kind: "Named"; name: string; typeArguments?: Type[] };
 
 // Functions and Methods
 export interface FunctionProto extends Node {
@@ -165,7 +189,8 @@ export type Statement =
   | TryStatement
   | ThrowStatement
   | FreeStatement
-  | DebugStatement;
+  | DebugStatement
+  | MessageStatement; // Added for message passing
 
 export interface IfStatement extends Node {
   type: "IfStatement";
@@ -213,7 +238,18 @@ export interface AssignmentStatement extends Node {
 
 export interface CallStatement extends Node {
   type: "CallStatement";
-  expression: CallExpression | MessageExpression;
+  expression: CallExpression;
+}
+
+export interface MessageStatement extends Node {
+  type: "MessageStatement";
+  receiver: Expression;
+  message: string;
+  arguments: Expression[];
+  chainedMessages?: {
+    message: string;
+    arguments: Expression[];
+  }[];
 }
 
 export interface ReturnStatement extends Node {
@@ -264,17 +300,6 @@ export interface DebugStatement extends Node {
   type: "DebugStatement";
 }
 
-// LValue
-export interface LValue extends Node {
-  type: "LValue";
-  kind: LValueKind;
-}
-
-export type LValueKind =
-  | { kind: "Identifier"; name: string }
-  | { kind: "ArrayAccess"; array: Expression; indices: Expression[] }
-  | { kind: "FieldAccess"; object: Expression; field: string };
-
 // Expressions
 export type Expression =
   | BinaryExpression
@@ -283,13 +308,14 @@ export type Expression =
   | IdentifierExpression
   | CallExpression
   | MessageExpression
-  | MemberExpression
+  | FieldAccessExpression
   | NewExpression
   | AllocExpression
   | SizeOfExpression
   | TypeCheckExpression
   | ArrayAccessExpression
-  | TypeCastExpression;
+  | TypeCastExpression
+  | ChainedExpression; // Added for expression chaining
 
 export interface BinaryExpression extends Node {
   type: "BinaryExpression";
@@ -306,7 +332,16 @@ export interface UnaryExpression extends Node {
 
 export interface LiteralExpression extends Node {
   type: "LiteralExpression";
-  kind: "INTEGER" | "DOUBLE" | "CHAR" | "STRING" | "true" | "false" | "null";
+  kind:
+    | "INTEGER"
+    | "DOUBLE"
+    | "CHAR"
+    | "STRING"
+    | "true"
+    | "false"
+    | "null"
+    | "self"
+    | "super";
   value: number | string | boolean | null;
 }
 
@@ -328,61 +363,36 @@ export interface MessageExpression extends Node {
   arguments: Expression[];
 }
 
-export interface MemberExpression extends Node {
-  type: "MemberExpression";
+export interface FieldAccessExpression extends Node {
+  type: "FieldAccessExpression";
   object: Expression;
-  property: string;
+  field: string;
 }
 
-export interface NewExpression extends Node {
-  type: "NewExpression";
-  constructor: Constructor;
+export interface ChainedExpression extends Node {
+  type: "ChainedExpression";
+  expressions: Expression[];
+  chainOperators: string[]; // The operators between expressions
 }
 
-export interface AllocExpression extends Node {
-  type: "AllocExpression";
-  constructor: Constructor;
+// LValue (Left-hand side value)
+export type LValue = IdentifierLValue | ArrayAccessLValue | FieldAccessLValue;
+
+export interface IdentifierLValue extends Node {
+  type: "IdentifierLValue";
+  name: string;
 }
 
-export interface Constructor extends Node {
-  type: "Constructor";
-  constructorType: Type;
-  kind: ConstructorKind;
-}
-
-export type ConstructorKind =
-  | {
-      kind: "ClassRecord";
-      initializers: { field: string; value: Expression }[];
-    }
-  | {
-      kind: "Array";
-      initializers: { index?: Expression; value: Expression }[];
-    };
-
-export interface SizeOfExpression extends Node {
-  type: "SizeOfExpression";
-  sizeType: Type;
-}
-
-export interface TypeCheckExpression extends Node {
-  type: "TypeCheckExpression";
-  kind: "isInstanceOf" | "isKindOf";
-  expression: Expression;
-  checkType: Type;
-}
-
-export interface ArrayAccessExpression extends Node {
-  type: "ArrayAccessExpression";
+export interface ArrayAccessLValue extends Node {
+  type: "ArrayAccessLValue";
   array: Expression;
   indices: Expression[];
 }
 
-export interface TypeCastExpression extends Node {
-  type: "TypeCastExpression";
-  kind: "asPtrTo" | "asInteger";
-  expression: Expression;
-  targetType?: Type; // Only for asPtrTo
+export interface FieldAccessLValue extends Node {
+  type: "FieldAccessLValue";
+  object: Expression;
+  field: string;
 }
 
 // OOP Constructs
@@ -390,16 +400,16 @@ export interface InterfaceDecl extends Node {
   type: "InterfaceDecl";
   name: string;
   typeParameters?: TypeParameter[];
-  extends?: Type[];
-  messages?: MethodProto[];
+  extends?: NamedType[];
+  messages?: MessageProto[];
 }
 
 export interface ClassDecl extends Node {
   type: "ClassDecl";
   name: string;
   typeParameters?: TypeParameter[];
-  implements?: Type[];
-  superclass?: Type;
+  implements?: NamedType[];
+  superclass?: NamedType;
   fields?: VarDecl[];
   methods?: MethodProto[];
 }
@@ -410,10 +420,11 @@ export interface BehaviorDecl extends Node {
   methods: MethodDecl[];
 }
 
-export interface TypeParameter extends Node {
-  type: "TypeParameter";
+export interface MessageProto extends Node {
+  type: "MessageProto";
   name: string;
-  constraint: Type;
+  parameters: Parameter[];
+  returnType?: Type;
 }
 
 export interface MethodProto extends Node {
@@ -436,4 +447,59 @@ export interface MethodDecl extends Node {
   prototype: MethodProto;
   variables?: VarDecl[];
   body: Statement[];
+}
+
+// Constructors
+export interface NewExpression extends Node {
+  type: "NewExpression";
+  constructor: Constructor;
+}
+
+export interface AllocExpression extends Node {
+  type: "AllocExpression";
+  constructor: Constructor;
+}
+
+export interface Constructor extends Node {
+  type: "Constructor";
+  constructorType: Type;
+  initialization: ConstructorInit;
+}
+
+export type ConstructorInit = ClassRecordInit | ArrayInit;
+
+export interface ClassRecordInit extends Node {
+  type: "ClassRecordInit";
+  initializers: { field: string; value: Expression }[];
+}
+
+export interface ArrayInit extends Node {
+  type: "ArrayInit";
+  initializers: { index?: Expression; value: Expression }[];
+}
+
+// Type Operations
+export interface SizeOfExpression extends Node {
+  type: "SizeOfExpression";
+  targetType: Type;
+}
+
+export interface TypeCheckExpression extends Node {
+  type: "TypeCheckExpression";
+  kind: "isInstanceOf" | "isKindOf";
+  expression: Expression;
+  checkType: Type;
+}
+
+export interface ArrayAccessExpression extends Node {
+  type: "ArrayAccessExpression";
+  array: Expression;
+  indices: Expression[];
+}
+
+export interface TypeCastExpression extends Node {
+  type: "TypeCastExpression";
+  kind: "asPtrTo" | "asInteger";
+  expression: Expression;
+  targetType?: Type; // Only for asPtrTo
 }
