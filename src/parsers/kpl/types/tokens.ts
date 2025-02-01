@@ -126,8 +126,8 @@ export enum TokenType {
 
   // Operators - unary
   BANG = "BANG", // !
-  AMPERSAND = "AMPERSAND", // & (address-of)
   STAR_PTR = "STAR_PTR", // * (dereference)
+  // AND (&) is used both ways
 
   // Punctuation
   LEFT_PAREN = "LEFT_PAREN", // (

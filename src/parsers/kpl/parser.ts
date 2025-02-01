@@ -1424,18 +1424,17 @@ export class KPLParser {
     let initialization: AST.ConstructorInit;
 
     // Check for ClassRecordInit or ArrayInit
-    if (this.peekNext().type === TokenType.LEFT_BRACE) {
-      this.advance();
-      this.advance();
+    if (this.check(TokenType.LEFT_BRACE)) {
+        this.advance()
       if (this.peekNext().type == TokenType.EQUAL) {
-        // ClassRecordInit
-        this.currentIndex = this.currentIndex - 2;
-        this.current = this.tokens[this.currentIndex - 2];
+        // ClassRecordInit if '=' after brace
+        this.currentIndex--;
+        this.current = this.tokens[this.currentIndex - 1];
         initialization = this.parseClassRecordInit();
       } else {
-        // ArrayInit
-        this.currentIndex = this.currentIndex - 2;
-        this.current = this.tokens[this.currentIndex - 2];
+        // ArrayInit otherwise
+        this.currentIndex--;
+        this.current = this.tokens[this.currentIndex - 1];
         initialization = this.parseArrayInit();
       }
     }
@@ -1451,11 +1450,7 @@ export class KPLParser {
   private parseClassRecordInit(): AST.ClassRecordInit {
     const startPosition = this.getPosition(this.current!);
 
-    // Parse class/record name (already checked in caller)
-    this.advance(); // Consume identifier
-
-    // Parse initializers
-    this.consume(TokenType.LEFT_BRACE, "Expected '{' after class/record name");
+    this.consume(TokenType.LEFT_BRACE, "Expected '{' after class/record initialization");
 
     const initializers: { field: string; value: AST.Expression }[] = [];
 
@@ -1492,11 +1487,7 @@ export class KPLParser {
   private parseArrayInit(): AST.ArrayInit {
     const startPosition = this.getPosition(this.current!);
 
-    // Parse array type name (already checked in caller)
-    this.advance(); // Consume identifier
-
-    // Parse initializers
-    this.consume(TokenType.LEFT_BRACE, "Expected '{' after array type");
+    this.consume(TokenType.LEFT_BRACE, "Expected '{' after array initialization");
 
     const initializers: { index?: AST.Expression; value: AST.Expression }[] =
       [];
@@ -1797,7 +1788,7 @@ export class KPLParser {
         TokenType.MINUS,
         TokenType.BANG,
         TokenType.STAR,
-        TokenType.AMPERSAND
+        TokenType.AND
       )
     ) {
       const operator = this.previous!.lexeme;
@@ -2392,7 +2383,7 @@ export class KPLParser {
         ID '{' ID = Expr { , ID = Expr } '}'
 
     ArrayInit
-        ID '{' [ Expr of ] Expr { , [ Expr of ] Expr } '}
+        ID '{' [ Expr of ] Expr { , [ Expr of ] Expr } '}'
 
     LValue
         Expr
