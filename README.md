@@ -13,7 +13,7 @@ Links:
 
 ## Features
 
-- Full syntax highlighting for KPL (`.k`) and Blitz Assembly (`.h`) files
+- Full syntax highlighting for KPL (`.k`, `.h`) and Blitz Assembly (`.s`) files
 - Smart bracket matching and autoclosing
 - Code folding
 - Comment toggling
@@ -48,6 +48,11 @@ Please report any issues on the [GitHub repository](https://github.com/Cwooper/k
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Release Notes
+
+### 0.1.0
+
+Added `kpl` autocompletion features, fixed `clr` command
+
 
 ### 0.0.9
 
@@ -91,6 +96,25 @@ Initial release of KPL Language Support:
 - Code block detection
 - Smart indentation
 - Bracket matching
+
+## TODO
+
+Features
+
+- [x] Auto-closing statements (e.g., `if` and `endIf`)
+- [x] Auto-completion for common statements/fields
+- [ ] `kpl` formatter
+- [ ] Parse `kpl` into an ast
+  - [ ] `tokenizer` with look aheads based on rules for `kpl` CFL
+  - [ ] store tokens into `symbolTable`
+  - [ ] basic token validation
+  - [ ] code auto-completion
+  - [ ] hover support
+
+Bugs
+
+- [x] add `clr` `blitz-asm` command
+- [ ] fix duplicating labels in `blitz-asm` `symbolManager`
 
 ## License
 

@@ -102,7 +102,7 @@
         },
         {
           "name": "keyword.control.instruction.control.blitz-asm",
-          "match": "\\b(seti|cleari|setp|clearp|sets|clears)\\b"
+          "match": "\\b(seti|clr|cleari|setp|clearp|sets|clears)\\b"
         },
         {
           "name": "keyword.control.instruction.special.blitz-asm",
