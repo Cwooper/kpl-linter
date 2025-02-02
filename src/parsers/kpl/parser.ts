@@ -434,6 +434,7 @@ export class KPLParser {
     };
   }
 
+  // ID { , ID } : Type [ = Expr2 ]
   private parseVarDecl(): AST.VarDecl {
     const startPosition = this.getPosition(this.current!);
 
@@ -459,6 +460,7 @@ export class KPLParser {
     };
   }
 
+  // var { VarDecl }+
   private parseVarDecls(): AST.VarDecl[] {
     // We've already consumed the 'var' token
     const declarations: AST.VarDecl[] = [];
@@ -466,7 +468,11 @@ export class KPLParser {
     // Parse one or more variable declarations
     do {
       declarations.push(this.parseVarDecl());
-    } while (this.peekNext().type === TokenType.COLON);
+    } while ( // This has to be an ID and the next has to be ',' | ':'
+      this.check(TokenType.IDENTIFIER) &&
+      (this.peekNext().type == TokenType.COMMA ||
+        this.peekNext().type == TokenType.COLON)
+    );
 
     return declarations;
   }
@@ -955,10 +961,7 @@ export class KPLParser {
         position: startPosition,
       };
     } else if (this.match(TokenType.BREAK)) {
-      return {
-        type: "BreakStatement",
-        position: startPosition,
-      };
+      return { type: "BreakStatement", position: startPosition };
     } else if (this.match(TokenType.CONTINUE)) {
       return {
         type: "ContinueStatement",
@@ -977,56 +980,105 @@ export class KPLParser {
         expression,
         position: startPosition,
       };
-    } else if (this.isStartOfLValue()) {
-      console.log("This is an L VALUE");
-      console.log(this.current?.type);
-      const lvalue = this.parseLValue();
-      this.consume(TokenType.EQUAL, "Expected '=' after left-hand side");
-      const value = this.parseExpr();
-      return {
-        type: "AssignmentStatement",
-        lvalue,
-        expression: value,
-        position: startPosition,
-      };
     } else {
-      const expr = this.parseExpr();
+      // No keyword statement, check for identifiers first
+      if (this.check(TokenType.IDENTIFIER)) {
+        const idToken = this.current!;
+        // Look ahead to see if this is a function call
+        if (this.peekNext().type === TokenType.LEFT_PAREN) {
+          // ID ArgList
+          const expr = this.parseExpr(); // This will parse the ID and ArgList
+          return {
+            type: "CallStatement",
+            expression: expr as AST.CallExpression,
+            position: startPosition,
+          };
+        }
+      }
 
-      // Check for message sends with chained messages
-      if (
-        this.check(TokenType.IDENTIFIER) &&
-        expr.type === "FieldAccessExpression"
-      ) {
-        const messages: { message: string; arguments: AST.Expression[] }[] = [];
+      // Parse expression for other cases
+      let expr = this.parseExpr();
 
-        do {
-          const messageToken = this.consume(
-            TokenType.IDENTIFIER,
-            "Expected message name"
+      // Now check what kind of statement this is
+      if (this.match(TokenType.EQUAL)) {
+        // This is an assignment statement
+        // We need to ensure the left side is a valid LValue
+        try {
+          const lvalue = this.expressionToLValue(expr);
+
+          const value = this.parseExpr();
+
+          return {
+            type: "AssignmentStatement",
+            lvalue,
+            expression: value,
+            position: startPosition,
+          };
+        } catch (error) {
+          throw this.error(
+            this.current!,
+            `Invalid left-hand side in assignment: ${error}`
           );
-          const args = this.parseArgList();
-          messages.push({
-            message: messageToken.lexeme,
-            arguments: args,
-          });
-        } while (this.match(TokenType.DOT));
+        }
+      } else if (this.match(TokenType.DOT)) {
+        // This is a method call: Expr . ID ArgList
+        const methodName = this.consume(
+          TokenType.IDENTIFIER,
+          "Expected method name after '.'"
+        ).lexeme;
+
+        const args = this.parseArgList();
 
         return {
           type: "MessageStatement",
-          receiver: (expr as AST.FieldAccessExpression).object,
-          message: (expr as AST.FieldAccessExpression).field,
-          arguments: [], // Initial message args
-          chainedMessages: messages,
+          receiver: expr,
+          message: methodName,
+          arguments: args,
+          position: startPosition,
+        };
+      } else if (this.check(TokenType.IDENTIFIER)) {
+        // This is a keyword message chain: Expr { ID : Expr }+
+        const messages: { message: string; arguments: AST.Expression[] }[] = [];
+
+        while (this.match(TokenType.IDENTIFIER)) {
+          const messageName = this.previous!.lexeme;
+          this.consume(TokenType.COLON, "Expected ':' after message name");
+          const arg = this.parseExpr();
+          messages.push({
+            message: messageName,
+            arguments: [arg],
+          });
+        }
+
+        if (messages.length === 0) {
+          throw this.error(
+            this.current!,
+            "Expected at least one keyword message"
+          );
+        }
+
+        return {
+          type: "MessageStatement",
+          receiver: expr,
+          message: messages[0].message,
+          arguments: messages[0].arguments,
+          chainedMessages: messages.slice(1),
+          position: startPosition,
+        };
+      } else if (expr.type === "CallExpression") {
+        // This was a simple function call: ID ArgList
+        return {
+          type: "CallStatement",
+          expression: expr,
           position: startPosition,
         };
       }
 
-      // Must be a call statement
-      return {
-        type: "CallStatement",
-        expression: expr as AST.CallExpression,
-        position: startPosition,
-      };
+      // If we get here, the expression wasn't used in a valid statement way
+      throw this.error(
+        this.current!,
+        "Expression not properly used in statement context"
+      );
     }
   }
 
@@ -1041,6 +1093,7 @@ export class KPLParser {
     let elseBlock: AST.Statement[] | undefined;
 
     while (this.match(TokenType.ELSE_IF)) {
+      console.log("Parsing elseif")
       const elseIfCondition = this.parseExpr();
       const elseIfBlock = this.parseStmtList();
       elseIfClauses.push({
@@ -1533,9 +1586,9 @@ export class KPLParser {
     // - a parenthesis (for complex expressions)
     // - a star (for pointer dereference)
     return (
-      (this.check(TokenType.IDENTIFIER) ||
+      this.check(TokenType.IDENTIFIER) ||
       this.check(TokenType.LEFT_PAREN) ||
-      this.check(TokenType.STAR))
+      this.check(TokenType.STAR)
     );
   }
 
@@ -1608,7 +1661,20 @@ export class KPLParser {
   private parseExpr2(): AST.Expression {
     let expr = this.parseExpr3();
 
-    while (this.check(TokenType.IDENTIFIER)) {
+    // Only match actual operator tokens, not identifiers
+    while (
+      this.check(TokenType.PLUS) ||
+      this.check(TokenType.MINUS) ||
+      this.check(TokenType.STAR) ||
+      this.check(TokenType.SLASH) ||
+      this.check(TokenType.PERCENT) ||
+      this.check(TokenType.AND) ||
+      this.check(TokenType.OR) ||
+      this.check(TokenType.XOR) ||
+      this.check(TokenType.SHIFT_LEFT) ||
+      this.check(TokenType.SHIFT_RIGHT) ||
+      this.check(TokenType.SHIFT_RIGHT_UNSIGNED)
+    ) {
       const operator = this.advance().lexeme;
       const right = this.parseExpr3();
       expr = {
@@ -2488,6 +2554,95 @@ export class KPLParser {
                     | new Constructor
                     | alloc Constructor
                     | sizeOf Type
+
+        A simplified rule for expressions, which ignores precedence and associativity:
+        Expr --> true
+              | false
+              | null
+              | self
+              | super
+              | INTEGER
+              | DOUBLE
+              | CHAR
+              | STRING
+              | ID ArgList
+              | ID
+              | NamelessFunction
+              | new Constructor
+              | alloc Constructor
+              | sizeOf Type
+              | ( Expr )
+              | OPERATOR Expr
+              | Expr OPERATOR Expr
+              | Expr . ID ArgList
+              | Expr . ID
+              | Expr { ID : Expr }+
+              | Expr '[' Expr { , Expr } ']'
+              | Expr asPtrTo Type
+              | Expr asInteger
+              | Expr arraySize
+              | Expr isInstanceOf Type
+              | Expr isKindOf Type
+
+ ================== (Lowest Precedence) ==================
+  All keyword messages, e.g., x at:y put:z
+=========================================================
+  All infix operators not mentioned below
+=========================================================
+  || Short-circuit for bool operands
+=========================================================
+  && Short-circuit for bool operands
+=========================================================
+  | Bitwise OR for int operands
+=========================================================
+  ^ Bitwise XOR for int operands
+=========================================================
+  & Bitwise AND for int operands
+=========================================================
+  == Can compare basic types, pointers, and
+  != objects, but not records or arrays
+=========================================================
+  < Can compare int, double, and
+  <= pointer operands
+  >
+  >=
+=========================================================
+  << Shift int operand left
+  >> Shift int operand right arithmetic
+  >>> Shift int operand right logical
+=========================================================
+  + Can also add ptr+int
+  - Can also subtract ptr-int and ptr-ptr
+=========================================================
+  *
+  / For int, always truncates down, -7/3 => -3
+  % Modulo operator for integers
+=========================================================
+  Prefix - For int and double operands
+  Prefix ! For int and bool operands
+  Prefix * Pointer dereference
+  Prefix & Address-of
+  All other prefix methods
+=========================================================
+  . Message Sending: x.foo(y,z)
+  . Field Accessing: x.name
+  asPtrTo
+  asInteger
+  arraySize
+  isInstanceOf
+  isKindOf
+  [] Array Accessing: a[i,j]
+=========================================================
+  () Parenthesized expressions: x*(y+z)
+  constants e.g., 123, "hello"
+  keywords i.e., true, false, null, self, super
+  nameless funs e.g., function(...)...endFunction
+  variables e.g., x
+  function call e.g., foo(4)
+  new e.g., new Person{name="smith"}
+  alloc e.g., alloc Person{name="smith"}
+  sizeOf e.g., sizeOf Person (in bytes)
+================ (Highest Precedence) ================
 
     */
 }
