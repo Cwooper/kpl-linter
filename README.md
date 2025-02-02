@@ -27,6 +27,7 @@ Links:
   - Parameterized classes
   - Function types and pointers
 - A formatter for the `blitz-asm` language files
+- A basic parser for the `kpl` language
 
 ## Installation
 
@@ -48,6 +49,10 @@ Please report any issues on the [GitHub repository](https://github.com/Cwooper/k
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Release Notes
+
+### 1.0.0
+
+Basic `kpl` parsing and validation
 
 ### 0.1.0
 
@@ -103,11 +108,11 @@ Features
 
 - [x] Auto-closing statements (e.g., `if` and `endIf`)
 - [x] Auto-completion for common statements/fields
-- [ ] `kpl` formatter
-- [ ] Parse `kpl` into an ast
-  - [ ] `tokenizer` with look aheads based on rules for `kpl` CFL
+- [x] `kpl` formatter
+- [x] Parse `kpl` into an ast
+  - [x] `tokenizer` with look aheads based on rules for `kpl` CFL
+  - [x] basic token validation
   - [ ] store tokens into `symbolTable`
-  - [ ] basic token validation
   - [ ] code auto-completion
   - [ ] hover support
 
