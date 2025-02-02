@@ -934,10 +934,6 @@ export class KPLParser {
   private parseStatement(): AST.Statement {
     const startPosition = this.getPosition(this.current!);
 
-    if (this.match(TokenType.STAR)) {
-      this.error(this.current!, "Found a Statement star!");
-    }
-
     // Handle each statement type according to the grammar
     if (this.match(TokenType.IF)) {
       return this.parseIfStatement(startPosition);
@@ -1004,27 +1000,40 @@ export class KPLParser {
       //           | Expr { ID : Expr }+
 
       // First try to handle direct function calls: ID ArgList
+      // Handle non-keyword statements
+      // First check for assignments by looking for LValue markers
       if (
-        this.check(TokenType.IDENTIFIER) &&
-        this.peekNext().type === TokenType.LEFT_PAREN
+        this.check(TokenType.STAR) || // Pointer dereference
+        this.check(TokenType.IDENTIFIER) || // Variable
+        this.check(TokenType.LEFT_PAREN)
       ) {
-        const idToken = this.current!;
-        this.advance(); // consume the identifier
-        const args = this.parseArgList();
-        return {
-          type: "CallStatement",
-          expression: {
-            type: "CallExpression",
-            callee: {
-              type: "IdentifierExpression",
-              name: idToken.lexeme,
-              position: this.getPosition(idToken),
-            },
-            arguments: args,
-            position: startPosition,
-          },
-          position: startPosition,
-        };
+        // Complex expression
+        // Look ahead to see if this is an assignment
+        const saveCurrent = this.currentIndex;
+        const saveToken = this.current;
+
+        try {
+          const lvalue = this.parseLValue();
+          if (this.check(TokenType.EQUAL)) {
+            // This is an assignment
+            this.advance(); // consume =
+            const value = this.parseExpr();
+            return {
+              type: "AssignmentStatement",
+              lvalue,
+              expression: value,
+              position: startPosition,
+            };
+          }
+
+          // Not an assignment, restore position and fall through to expression parsing
+          this.currentIndex = saveCurrent;
+          this.current = saveToken;
+        } catch (error) {
+          // Not a valid LValue, restore position and fall through
+          this.currentIndex = saveCurrent;
+          this.current = saveToken;
+        }
       }
 
       // Otherwise, parse first expression and see what follows
@@ -2237,34 +2246,6 @@ export class KPLParser {
     }
 
     throw this.error(this.current!, "Expected expression");
-  }
-
-  private isOperator(): boolean {
-    // Try to match any operator token
-    return this.match(
-      // Arithmetic operators
-      TokenType.PLUS, // +
-      TokenType.MINUS, // -
-      TokenType.STAR, // *
-      TokenType.SLASH, // /
-      TokenType.PERCENT, // %
-
-      // Bitwise operators
-      TokenType.AND, // &
-      TokenType.OR, // |
-      TokenType.XOR, // ^
-      TokenType.SHIFT_LEFT, // <<
-      TokenType.SHIFT_RIGHT, // >>
-      TokenType.SHIFT_RIGHT_UNSIGNED, // >>>
-
-      // Comparison operators
-      TokenType.EQUAL_EQUAL, // ==
-      TokenType.BANG_EQUAL, // !=
-      TokenType.LESS, // <
-      TokenType.LESS_EQUAL, // <=
-      TokenType.GREATER, // >
-      TokenType.GREATER_EQUAL // >=
-    );
   }
 
   private parseOperator(errorMessage: string): string {
