@@ -5,6 +5,7 @@
 import { Token, TokenType } from "./types/tokens";
 import { Tokenizer, TokenizerError } from "./tokenizer";
 import * as AST from "./types/ast";
+import { json } from "stream/consumers";
 
 export class ParseError extends Error {
   constructor(message: string, public token: Token) {
@@ -1013,12 +1014,22 @@ export class KPLParser {
 
       // Otherwise, parse first expression and see what follows
       const expr = this.parseExpr();
+      if (this.current?.line === 62) {
+        console.log(`Line 62 expr: ${JSON.stringify(expr)}`);
+      }
 
       // Handle assignment: LValue = Expr
       if (this.match(TokenType.EQUAL)) {
+        console.log(` ${this.current?.line}: Parsing "LValue = Expr"`);
         try {
           const lvalue = this.expressionToLValue(expr);
+          console.log(
+            ` ${this.current?.line}: LValue: ${JSON.stringify(lvalue)}`
+          );
           const value = this.parseExpr();
+          console.log(
+            ` ${this.current?.line}: value: ${JSON.stringify(value)}`
+          );
           return {
             type: "AssignmentStatement",
             lvalue,
@@ -2046,6 +2057,42 @@ export class KPLParser {
       return expr;
     }
 
+    if (this.match(TokenType.IDENTIFIER)) {
+      const name = this.previous!.lexeme;
+      console.log(`Parsing identifier: ${name}`);
+
+      // Check for function call
+      if (this.match(TokenType.LEFT_PAREN)) {
+        console.log(`Found function call for: ${name}`);
+        // Parse argument list
+        const args: AST.Expression[] = [];
+        if (!this.check(TokenType.RIGHT_PAREN)) {
+          do {
+            args.push(this.parseExpr());
+          } while (this.match(TokenType.COMMA));
+        }
+        this.consume(TokenType.RIGHT_PAREN, "Expected ')' after arguments");
+
+        return {
+          type: "CallExpression",
+          callee: {
+            type: "IdentifierExpression",
+            name,
+            position: startPosition,
+          },
+          arguments: args,
+          position: startPosition,
+        };
+      }
+
+      // Simple identifier
+      return {
+        type: "IdentifierExpression",
+        name,
+        position: startPosition,
+      };
+    }
+
     if (this.match(TokenType.NULL)) {
       return {
         type: "LiteralExpression",
@@ -2100,6 +2147,15 @@ export class KPLParser {
       };
     }
 
+    if (this.match(TokenType.HEX_LITERAL)) {
+      return {
+        type: "LiteralExpression",
+        kind: "STRING",
+        value: this.previous!.literal,
+        position: startPosition,
+      };
+    }
+
     if (this.match(TokenType.CHAR_LITERAL)) {
       return {
         type: "LiteralExpression",
@@ -2124,16 +2180,6 @@ export class KPLParser {
       return {
         type: "NamelessFunctionExpression",
         function: namelessFun,
-        position: startPosition,
-      };
-    }
-
-    if (this.match(TokenType.IDENTIFIER)) {
-      const name = this.previous!.lexeme;
-      // Don't automatically parse ArgList here
-      return {
-        type: "IdentifierExpression",
-        name,
         position: startPosition,
       };
     }
