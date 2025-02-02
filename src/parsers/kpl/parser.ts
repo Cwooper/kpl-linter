@@ -934,6 +934,10 @@ export class KPLParser {
   private parseStatement(): AST.Statement {
     const startPosition = this.getPosition(this.current!);
 
+    if (this.match(TokenType.STAR)) {
+      this.error(this.current!, "Found a Statement star!");
+    }
+
     // Handle each statement type according to the grammar
     if (this.match(TokenType.IF)) {
       return this.parseIfStatement(startPosition);
@@ -971,8 +975,19 @@ export class KPLParser {
     } else if (this.match(TokenType.RETURN)) {
       let expression: AST.Expression | undefined;
       if (
+        // Verify that the next tokens are not the start of an expression
         !this.check(TokenType.END_FUNCTION) &&
-        !this.check(TokenType.END_METHOD)
+        !this.check(TokenType.END_METHOD) &&
+        !this.check(TokenType.END_SWITCH) &&
+        !this.check(TokenType.END_WHILE) &&
+        !this.check(TokenType.END_TRY) &&
+        !this.check(TokenType.END_IF) &&
+        !this.check(TokenType.ELSE_IF) &&
+        !this.check(TokenType.ELSE) &&
+        !this.check(TokenType.UNTIL) &&
+        !this.check(TokenType.CASE) &&
+        !this.check(TokenType.DEFAULT) &&
+        !this.check(TokenType.CATCH)
       ) {
         expression = this.parseExpr();
       }
@@ -1014,22 +1029,12 @@ export class KPLParser {
 
       // Otherwise, parse first expression and see what follows
       const expr = this.parseExpr();
-      if (this.current?.line === 62) {
-        console.log(`Line 62 expr: ${JSON.stringify(expr)}`);
-      }
 
       // Handle assignment: LValue = Expr
       if (this.match(TokenType.EQUAL)) {
-        console.log(` ${this.current?.line}: Parsing "LValue = Expr"`);
         try {
           const lvalue = this.expressionToLValue(expr);
-          console.log(
-            ` ${this.current?.line}: LValue: ${JSON.stringify(lvalue)}`
-          );
           const value = this.parseExpr();
-          console.log(
-            ` ${this.current?.line}: value: ${JSON.stringify(value)}`
-          );
           return {
             type: "AssignmentStatement",
             lvalue,
@@ -1182,24 +1187,34 @@ export class KPLParser {
   private parseForStatement(startPosition: AST.Position): AST.ForStatement {
     // Check for traditional for loop with parentheses
     if (this.match(TokenType.LEFT_PAREN)) {
-      const init = this.parseStmtList();
+      // Parse initialization
+      const init: AST.Statement[] = [];
+      if (!this.check(TokenType.SEMICOLON)) {
+        init.push(this.parseStatement());
+      }
       this.consume(
         TokenType.SEMICOLON,
         "Expected ';' after for loop initialization"
       );
 
+      // Parse condition (optional)
       let condition: AST.Expression | undefined;
-      if (!this.match(TokenType.SEMICOLON)) {
+      if (!this.check(TokenType.SEMICOLON)) {
         condition = this.parseExpr();
-        this.consume(
-          TokenType.SEMICOLON,
-          "Expected ';' after for loop condition"
-        );
       }
+      this.consume(
+        TokenType.SEMICOLON,
+        "Expected ';' after for loop condition"
+      );
 
-      const update = this.parseStmtList();
+      // Parse update
+      const update: AST.Statement[] = [];
+      if (!this.check(TokenType.RIGHT_PAREN)) {
+        update.push(this.parseStatement());
+      }
       this.consume(TokenType.RIGHT_PAREN, "Expected ')' after for clauses");
 
+      // Parse body
       const body = this.parseStmtList();
       this.consume(TokenType.END_FOR, "Expected 'endFor'");
 
@@ -1597,32 +1612,29 @@ export class KPLParser {
   }
 
   private parseLValue(): AST.LValue {
+    // Handle pointer dereference
+    if (this.match(TokenType.STAR)) {
+      const startPosition = this.getPosition(this.previous!);
+      const expr = this.parseExpr();
+      return {
+        type: "PointerDereferenceLValue",
+        expression: expr,
+        position: startPosition,
+      };
+    }
+
+    // Parse the base expression
     const expression = this.parseExpr();
 
-    // Convert the expression to an LValue using our helper method
+    // Convert the expression to an LValue
     try {
       return this.expressionToLValue(expression);
     } catch (error) {
-      // If expressionToLValue throws an error, provide more context
       throw this.error(
         this.current!,
         `Invalid left-hand side of assignment. Expected identifier, array access, or field access, but got ${expression.type}`
       );
     }
-  }
-
-  private isStartOfLValue(): boolean {
-    if (this.isAtEnd()) return false;
-
-    // An LValue starts with either:
-    // - an identifier
-    // - a parenthesis (for complex expressions)
-    // - a star (for pointer dereference)
-    return (
-      this.check(TokenType.IDENTIFIER) ||
-      this.check(TokenType.LEFT_PAREN) ||
-      this.check(TokenType.STAR)
-    );
   }
 
   // The existing expressionToLValue helper method for reference:
@@ -1648,6 +1660,18 @@ export class KPLParser {
           field: expr.field,
           position: expr.position,
         };
+      case "UnaryExpression":
+        if (expr.operator === "*") {
+          return {
+            type: "PointerDereferenceLValue",
+            expression: expr.operand,
+            position: expr.position,
+          };
+        }
+        throw this.error(
+          this.current!,
+          `Unary operator '${expr.operator}' cannot be used in left-hand side of assignment`
+        );
       default:
         throw this.error(this.current!, "Invalid left-hand side in assignment");
     }
@@ -1917,9 +1941,15 @@ export class KPLParser {
 
   private parseExpr15(): AST.Expression {
     // Handle unary operators (OPERATOR Expr15)
-    if (this.isOperator()) {
-      const operator = this.advance().lexeme;
-      const operand = this.parseExpr15();
+    if (
+      this.match(TokenType.BANG) || // !
+      this.match(TokenType.MINUS) || // -
+      this.match(TokenType.STAR) || // *
+      this.match(TokenType.AND)
+    ) {
+      // &
+      const operator = this.previous!.lexeme;
+      const operand = this.parseExpr15(); // Recursive for chained unary ops
       return {
         type: "UnaryExpression",
         operator,
@@ -2059,11 +2089,9 @@ export class KPLParser {
 
     if (this.match(TokenType.IDENTIFIER)) {
       const name = this.previous!.lexeme;
-      console.log(`Parsing identifier: ${name}`);
 
       // Check for function call
       if (this.match(TokenType.LEFT_PAREN)) {
-        console.log(`Found function call for: ${name}`);
         // Parse argument list
         const args: AST.Expression[] = [];
         if (!this.check(TokenType.RIGHT_PAREN)) {

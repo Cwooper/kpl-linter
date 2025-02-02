@@ -383,7 +383,11 @@ export interface NamelessFunctionExpression extends Node {
 }
 
 // LValue (Left-hand side value)
-export type LValue = IdentifierLValue | ArrayAccessLValue | FieldAccessLValue;
+export type LValue =
+  | IdentifierLValue
+  | ArrayAccessLValue
+  | FieldAccessLValue
+  | PointerDereferenceLValue;
 
 export interface IdentifierLValue extends Node {
   type: "IdentifierLValue";
@@ -400,6 +404,11 @@ export interface FieldAccessLValue extends Node {
   type: "FieldAccessLValue";
   object: Expression;
   field: string;
+}
+
+export interface PointerDereferenceLValue extends Node {
+  type: "PointerDereferenceLValue";
+  expression: Expression;
 }
 
 // OOP Constructs
