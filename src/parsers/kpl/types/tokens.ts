@@ -31,6 +31,7 @@ export enum TokenType {
   DEBUG = "DEBUG",
   DEFAULT = "DEFAULT",
   DO = "DO",
+  DOUBLE = "DOUBLE",
   ELSE = "ELSE",
   ELSE_IF = "ELSE_IF",
   END_BEHAVIOR = "END_BEHAVIOR",
@@ -55,6 +56,7 @@ export enum TokenType {
   FOR = "FOR",
   FREE = "FREE",
   FUNCTION = "FUNCTION",
+  FUNCTIONS = "FUNCTIONS",
   HEADER = "HEADER",
   IF = "IF",
   IMPLEMENTS = "IMPLEMENTS",
@@ -93,10 +95,11 @@ export enum TokenType {
   WHILE = "WHILE",
 
   // Literals
-  INTEGER = "INTEGER", // e.g., 42, 0x1234ABCD
-  DOUBLE = "DOUBLE", // e.g., 3.1415, 6.022e23
-  CHAR_LITERAL = "CHAR", // e.g., 'a', '\n'
-  STRING_LITERAL = "STRING", // e.g., "hello", "\t\n"
+  INTEGER_LITERAL = "INTEGER_LITERAL", // e.g., 42, 0x1234ABCD
+  DOUBLE_LITERAL = "DOUBLE_LITERAL", // e.g., 3.1415, 6.022e23
+  HEX_LITERAL = "HEX_LITERAL", // e.g., 0x45454545
+  CHAR_LITERAL = "CHAR_LITERAL", // e.g., 'a', '\n'
+  STRING_LITERAL = "STRING_LITERAL", // e.g., "hello", "\t\n"
   IDENTIFIER = "IDENTIFIER", // e.g., x, myName, MAX_SIZE
 
   // Operators - binary
@@ -123,8 +126,8 @@ export enum TokenType {
 
   // Operators - unary
   BANG = "BANG", // !
-  AMPERSAND = "AMPERSAND", // & (address-of)
-  STAR_PTR = "STAR_PTR", // * (dereference)
+  // STAR (*) is used both ways
+  // AND (&) is used both ways
 
   // Punctuation
   LEFT_PAREN = "LEFT_PAREN", // (
@@ -191,6 +194,7 @@ export const KEYWORDS: { [key: string]: TokenType } = {
   for: TokenType.FOR,
   free: TokenType.FREE,
   function: TokenType.FUNCTION,
+  functions: TokenType.FUNCTIONS,
   header: TokenType.HEADER,
   if: TokenType.IF,
   implements: TokenType.IMPLEMENTS,

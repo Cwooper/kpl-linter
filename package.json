@@ -2,7 +2,7 @@
   "name": "kpl-linter",
   "displayName": "kpl-linter",
   "description": "KPL Linting and Syntax Highlighting",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "author": "Cwooper",
   "publisher": "CwooperDev",
   "license": "MIT",
