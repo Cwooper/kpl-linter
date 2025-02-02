@@ -45,7 +45,6 @@ export class KPLManager {
       // Start tokenization
       const tokenizer = new Tokenizer(textContent);
       const tokens = tokenizer.tokenize();
-      console.log(uri.fsPath);
       cacheEntry.tokens = tokens;
 
       // If tokenization succeeded, attempt parsing

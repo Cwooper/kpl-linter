@@ -1728,20 +1728,8 @@ export class KPLParser {
     let expr = this.parseExpr3();
 
     // Only match actual operator tokens, not identifiers
-    while (
-      this.check(TokenType.PLUS) ||
-      this.check(TokenType.MINUS) ||
-      this.check(TokenType.STAR) ||
-      this.check(TokenType.SLASH) ||
-      this.check(TokenType.PERCENT) ||
-      this.check(TokenType.AND) ||
-      this.check(TokenType.OR) ||
-      this.check(TokenType.XOR) ||
-      this.check(TokenType.SHIFT_LEFT) ||
-      this.check(TokenType.SHIFT_RIGHT) ||
-      this.check(TokenType.SHIFT_RIGHT_UNSIGNED)
-    ) {
-      const operator = this.advance().lexeme;
+    while (this.match(...this.getValidOperators())) {
+      const operator = this.previous!.lexeme;
       const right = this.parseExpr3();
       expr = {
         type: "BinaryExpression",
@@ -1933,7 +1921,11 @@ export class KPLParser {
   private parseExpr13(): AST.Expression {
     let expr = this.parseExpr15();
 
-    while (this.match(TokenType.STAR, TokenType.SLASH, TokenType.PERCENT)) {
+    while (
+      (this.previous!.line === this.current!.line &&
+        this.match(TokenType.STAR)) ||
+      this.match(TokenType.SLASH, TokenType.PERCENT)
+    ) {
       const operator = this.previous!.lexeme;
       const right = this.parseExpr15();
       expr = {
@@ -1954,9 +1946,8 @@ export class KPLParser {
       this.match(TokenType.BANG) || // !
       this.match(TokenType.MINUS) || // -
       this.match(TokenType.STAR) || // *
-      this.match(TokenType.AND)
+      this.match(TokenType.AND) // &
     ) {
-      // &
       const operator = this.previous!.lexeme;
       const operand = this.parseExpr15(); // Recursive for chained unary ops
       return {
@@ -2248,38 +2239,67 @@ export class KPLParser {
     throw this.error(this.current!, "Expected expression");
   }
 
+  private static readonly operators: TokenType[] = [
+    TokenType.PLUS, // +
+    TokenType.MINUS, // -
+    TokenType.STAR, // *
+    TokenType.SLASH, // /
+    TokenType.PERCENT, // %
+
+    // Bitwise operators
+    TokenType.AND, // &
+    TokenType.OR, // |
+    TokenType.XOR, // ^
+    TokenType.SHIFT_LEFT, // <<
+    TokenType.SHIFT_RIGHT, // >>
+    TokenType.SHIFT_RIGHT_UNSIGNED, // >>>
+
+    // Comparison operators
+    TokenType.EQUAL_EQUAL, // ==
+    TokenType.BANG_EQUAL, // !=
+    TokenType.LESS, // <
+    TokenType.LESS_EQUAL, // <=
+    TokenType.GREATER, // >
+    TokenType.GREATER_EQUAL, // >=
+    TokenType.BANG, // !
+    TokenType.LOGICAL_OR, // ||
+    TokenType.LOGICAL_AND,
+  ];
+
   private parseOperator(errorMessage: string): string {
     // Try to match any operator token
-    if (
-      this.match(
-        // Arithmetic operators
-        TokenType.PLUS, // +
-        TokenType.MINUS, // -
-        TokenType.STAR, // *
-        TokenType.SLASH, // /
-        TokenType.PERCENT, // %
-
-        // Bitwise operators
-        TokenType.AND, // &
-        TokenType.OR, // |
-        TokenType.XOR, // ^
-        TokenType.SHIFT_LEFT, // <<
-        TokenType.SHIFT_RIGHT, // >>
-        TokenType.SHIFT_RIGHT_UNSIGNED, // >>>
-
-        // Comparison operators
-        TokenType.EQUAL_EQUAL, // ==
-        TokenType.BANG_EQUAL, // !=
-        TokenType.LESS, // <
-        TokenType.LESS_EQUAL, // <=
-        TokenType.GREATER, // >
-        TokenType.GREATER_EQUAL // >=
-      )
-    ) {
+    if (this.match(...KPLParser.operators)) {
       return this.previous!.lexeme;
     }
 
     throw this.error(this.current!, errorMessage);
+  }
+
+  private getValidOperators(): TokenType[] {
+    // Exclude logical, bitwise, and comparison operators
+    return KPLParser.operators.filter(
+      (op) =>
+        ![
+          TokenType.LOGICAL_OR, // ||
+          TokenType.LOGICAL_AND, // &&
+          TokenType.OR, // |
+          TokenType.XOR, // ^
+          TokenType.AND, // &
+          TokenType.EQUAL_EQUAL, // ==
+          TokenType.BANG_EQUAL, // !=
+          TokenType.LESS, // <
+          TokenType.LESS_EQUAL, // <=
+          TokenType.GREATER, // >
+          TokenType.GREATER_EQUAL, // >=
+          TokenType.SHIFT_LEFT, // <<
+          TokenType.SHIFT_RIGHT, // >>
+          TokenType.SHIFT_RIGHT_UNSIGNED, // >>>
+          TokenType.PLUS, // +
+          TokenType.SLASH, // /
+          TokenType.STAR, // *
+          TokenType.PERCENT, // %
+        ].includes(op)
+    );
   }
 
   private isNewSection(): boolean {
@@ -2290,6 +2310,7 @@ export class KPLParser {
       this.check(TokenType.ENUM) ||
       this.check(TokenType.TYPE) ||
       this.check(TokenType.FUNCTIONS) ||
+      this.check(TokenType.FUNCTION) ||
       this.check(TokenType.INTERFACE) ||
       this.check(TokenType.CLASS) ||
       this.check(TokenType.BEHAVIOR) ||
