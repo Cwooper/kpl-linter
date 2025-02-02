@@ -46,7 +46,7 @@ export class Tokenizer {
   // Main entry point for tokenization
   tokenize(): Token[] {
     const tokens: Token[] = [];
-
+    // TODO: This is always returning EOF. nextChar() vs scanToken() misuse?
     try {
       // Initialize the lookahead buffer
       this.token5 = this.scanToken();
@@ -234,11 +234,6 @@ export class Tokenizer {
   private peekNext(): string {
     if (this.current + 1 >= this.source.length) return "\0";
     return this.source[this.current + 1];
-  }
-
-  private peekNext2(): string {
-    if (this.current + 2 >= this.source.length) return "\0";
-    return this.source[this.current + 2];
   }
 
   private match(expected: string): boolean {
