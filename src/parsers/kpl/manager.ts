@@ -10,7 +10,7 @@ import {
   DiagnosticCollection,
 } from "vscode";
 import { Tokenizer, TokenizerError } from "./tokenizer";
-import { KPLParser, ParseError } from "./parser";
+// import { KPLParser, ParseError } from "./parser"; // TODO
 
 interface FileCache {
   content: string;
@@ -43,30 +43,31 @@ export class KPLManager {
 
     try {
       // Start tokenization
-      const tokenizer = new Tokenizer(textContent);
+      const tokenizer = new Tokenizer(textContent, uri);
       const tokens = tokenizer.tokenize();
+      console.log(tokens)
       cacheEntry.tokens = tokens;
 
       // If tokenization succeeded, attempt parsing
       if (!tokenizer.hasErrors()) {
-        try {
-          // Pass the tokens directly to parser instead of re-tokenizing
-          const parser = new KPLParser(tokens);
-          const ast = parser.parse();
-          cacheEntry.ast = ast;
+    //     try {  // TODO
+    //       // Pass the tokens directly to parser instead of re-tokenizing
+    //       const parser = new KPLParser(tokens);
+    //       const ast = parser.parse();
+    //       cacheEntry.ast = ast;
 
-          // Clear any existing diagnostics if parsing succeeded
-          this.diagnosticCollection.set(uri, []);
-        } catch (error) {
-          if (error instanceof ParseError) {
-            this.reportParseError(uri, error);
-          } else {
-            console.error(
-              `Unexpected error parsing file ${uri.fsPath}:`,
-              error
-            );
-          }
-        }
+    //       // Clear any existing diagnostics if parsing succeeded
+    //       this.diagnosticCollection.set(uri, []);
+    //     } catch (error) {
+    //       if (error instanceof ParseError) {
+    //         this.reportParseError(uri, error);
+    //       } else {
+    //         console.error(
+    //           `Unexpected error parsing file ${uri.fsPath}:`,
+    //           error
+    //         );
+    //       }
+    //     }
       } else {
         // Report tokenizer errors
         this.reportTokenizerErrors(uri, tokenizer.getErrors());
@@ -102,21 +103,21 @@ export class KPLManager {
   }
 
   // Report parser errors as VS Code diagnostics
-  private reportParseError(uri: Uri, error: ParseError): void {
-    const diagnostic: Diagnostic = {
-      range: new Range(
-        error.token.line - 1, // VSCode lines are 0-based
-        error.token.column - 1, // Keep column as-is
-        error.token.line - 1, // Same end line
-        error.token.column + error.token.lexeme.length - 1 // End after token
-      ),
-      message: error.message,
-      severity: DiagnosticSeverity.Error,
-      source: "KPL Parser",
-    };
+  // private reportParseError(uri: Uri, error: ParseError): void { // TODO
+  //   const diagnostic: Diagnostic = {
+  //     range: new Range(
+  //       error.token.line - 1, // VSCode lines are 0-based
+  //       error.token.column - 1, // Keep column as-is
+  //       error.token.line - 1, // Same end line
+  //       error.token.column + error.token.lexeme.length - 1 // End after token
+  //     ),
+  //     message: error.message,
+  //     severity: DiagnosticSeverity.Error,
+  //     source: "KPL Parser",
+  //   };
 
-    this.updateDiagnostics(uri, [diagnostic]);
-  }
+  //   this.updateDiagnostics(uri, [diagnostic]);
+  // }
 
   // Update diagnostics in VS Code
   private updateDiagnostics(uri: Uri, diagnostics: Diagnostic[]): void {
