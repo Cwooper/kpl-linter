@@ -981,33 +981,44 @@ export class KPLParser {
         position: startPosition,
       };
     } else {
-      // No keyword statement, check for identifiers first
-      if (this.check(TokenType.IDENTIFIER)) {
+      // Handle non-keyword statements
+      // Statement --> ID ArgList
+      //           | LValue = Expr
+      //           | Expr . ID ArgList
+      //           | Expr { ID : Expr }+
+
+      // First try to handle direct function calls: ID ArgList
+      if (
+        this.check(TokenType.IDENTIFIER) &&
+        this.peekNext().type === TokenType.LEFT_PAREN
+      ) {
         const idToken = this.current!;
-        // Look ahead to see if this is a function call
-        if (this.peekNext().type === TokenType.LEFT_PAREN) {
-          // ID ArgList
-          const expr = this.parseExpr(); // This will parse the ID and ArgList
-          return {
-            type: "CallStatement",
-            expression: expr as AST.CallExpression,
+        this.advance(); // consume the identifier
+        const args = this.parseArgList();
+        return {
+          type: "CallStatement",
+          expression: {
+            type: "CallExpression",
+            callee: {
+              type: "IdentifierExpression",
+              name: idToken.lexeme,
+              position: this.getPosition(idToken),
+            },
+            arguments: args,
             position: startPosition,
-          };
-        }
+          },
+          position: startPosition,
+        };
       }
 
-      // Parse expression for other cases
-      let expr = this.parseExpr();
+      // Otherwise, parse first expression and see what follows
+      const expr = this.parseExpr();
 
-      // Now check what kind of statement this is
+      // Handle assignment: LValue = Expr
       if (this.match(TokenType.EQUAL)) {
-        // This is an assignment statement
-        // We need to ensure the left side is a valid LValue
         try {
           const lvalue = this.expressionToLValue(expr);
-
           const value = this.parseExpr();
-
           return {
             type: "AssignmentStatement",
             lvalue,
@@ -1020,42 +1031,52 @@ export class KPLParser {
             `Invalid left-hand side in assignment: ${error}`
           );
         }
-      } else if (this.match(TokenType.DOT)) {
-        // This is a method call: Expr . ID ArgList
+      }
+
+      // Handle method call: Expr . ID ArgList
+      if (this.match(TokenType.DOT)) {
         const methodName = this.consume(
           TokenType.IDENTIFIER,
           "Expected method name after '.'"
         ).lexeme;
 
         const args = this.parseArgList();
-
         return {
-          type: "MessageStatement",
-          receiver: expr,
-          message: methodName,
-          arguments: args,
+          type: "CallStatement",
+          expression: {
+            type: "CallExpression",
+            callee: {
+              type: "FieldAccessExpression",
+              object: expr,
+              field: methodName,
+              position: expr.position,
+            },
+            arguments: args,
+            position: startPosition,
+          },
           position: startPosition,
         };
-      } else if (this.check(TokenType.IDENTIFIER)) {
-        // This is a keyword message chain: Expr { ID : Expr }+
+      }
+
+      // Handle keyword messages: Expr { ID : Expr }+
+      if (
+        this.check(TokenType.IDENTIFIER) &&
+        this.peekNext().type === TokenType.COLON
+      ) {
         const messages: { message: string; arguments: AST.Expression[] }[] = [];
 
-        while (this.match(TokenType.IDENTIFIER)) {
-          const messageName = this.previous!.lexeme;
+        do {
+          const messageToken = this.advance(); // consume ID
           this.consume(TokenType.COLON, "Expected ':' after message name");
           const arg = this.parseExpr();
           messages.push({
-            message: messageName,
+            message: messageToken.lexeme,
             arguments: [arg],
           });
-        }
-
-        if (messages.length === 0) {
-          throw this.error(
-            this.current!,
-            "Expected at least one keyword message"
-          );
-        }
+        } while (
+          this.check(TokenType.IDENTIFIER) &&
+          this.peekNext().type === TokenType.COLON
+        );
 
         return {
           type: "MessageStatement",
@@ -1065,8 +1086,10 @@ export class KPLParser {
           chainedMessages: messages.slice(1),
           position: startPosition,
         };
-      } else if (expr.type === "CallExpression") {
-        // This was a simple function call: ID ArgList
+      }
+
+      // Handle bare CallExpression (could come from parseExpr)
+      if (expr.type === "CallExpression") {
         return {
           type: "CallStatement",
           expression: expr,
@@ -1074,7 +1097,7 @@ export class KPLParser {
         };
       }
 
-      // If we get here, the expression wasn't used in a valid statement way
+      // If none of the above, this expression isn't valid as a statement
       throw this.error(
         this.current!,
         "Expression not properly used in statement context"
@@ -1093,7 +1116,6 @@ export class KPLParser {
     let elseBlock: AST.Statement[] | undefined;
 
     while (this.match(TokenType.ELSE_IF)) {
-      console.log("Parsing elseif")
       const elseIfCondition = this.parseExpr();
       const elseIfBlock = this.parseStmtList();
       elseIfClauses.push({
@@ -1903,24 +1925,29 @@ export class KPLParser {
     let expr = this.parseExpr17();
 
     while (true) {
+      // Handle .ID or .ID ArgList
       if (this.match(TokenType.DOT)) {
-        // Parse .ID or .ID ArgList
         const name = this.consume(
           TokenType.IDENTIFIER,
           "Expected identifier after '.'"
         ).lexeme;
+
         if (this.check(TokenType.LEFT_PAREN)) {
-          // Method call with arguments
+          // Method call: .ID ArgList
           const args = this.parseArgList();
           expr = {
-            type: "MessageExpression",
-            receiver: expr,
-            message: name,
+            type: "CallExpression",
+            callee: {
+              type: "FieldAccessExpression",
+              object: expr,
+              field: name,
+              position: expr.position,
+            },
             arguments: args,
             position: expr.position,
           };
         } else {
-          // Field access
+          // Field access: .ID
           expr = {
             type: "FieldAccessExpression",
             object: expr,
@@ -1928,8 +1955,11 @@ export class KPLParser {
             position: expr.position,
           };
         }
-      } else if (this.match(TokenType.AS_PTR_TO)) {
-        // Handle asPtrTo Type
+        continue;
+      }
+
+      // Handle asPtrTo Type
+      if (this.match(TokenType.AS_PTR_TO)) {
         const targetType = this.parseType();
         expr = {
           type: "TypeCastExpression",
@@ -1938,24 +1968,33 @@ export class KPLParser {
           targetType,
           position: expr.position,
         };
-      } else if (this.match(TokenType.AS_INTEGER)) {
-        // Handle asInteger
+        continue;
+      }
+
+      // Handle asInteger
+      if (this.match(TokenType.AS_INTEGER)) {
         expr = {
           type: "TypeCastExpression",
           kind: "asInteger",
           expression: expr,
           position: expr.position,
         };
-      } else if (this.match(TokenType.ARRAY_SIZE)) {
-        // Handle arraySize
+        continue;
+      }
+
+      // Handle arraySize
+      if (this.match(TokenType.ARRAY_SIZE)) {
         expr = {
           type: "ArrayAccessExpression",
           array: expr,
           indices: [], // Empty indices indicates arraySize
           position: expr.position,
         };
-      } else if (this.match(TokenType.IS_INSTANCE_OF, TokenType.IS_KIND_OF)) {
-        // Handle isInstanceOf Type and isKindOf Type
+        continue;
+      }
+
+      // Handle isInstanceOf/isKindOf Type
+      if (this.match(TokenType.IS_INSTANCE_OF, TokenType.IS_KIND_OF)) {
         const kind =
           this.previous!.type === TokenType.IS_INSTANCE_OF
             ? "isInstanceOf"
@@ -1968,8 +2007,11 @@ export class KPLParser {
           checkType,
           position: expr.position,
         };
-      } else if (this.match(TokenType.LEFT_BRACKET)) {
-        // Handle array access [Expr {, Expr}]
+        continue;
+      }
+
+      // Handle array access: [Expr {, Expr}]
+      if (this.match(TokenType.LEFT_BRACKET)) {
         const indices: AST.Expression[] = [this.parseExpr()];
         while (this.match(TokenType.COMMA)) {
           indices.push(this.parseExpr());
@@ -1984,9 +2026,11 @@ export class KPLParser {
           indices,
           position: expr.position,
         };
-      } else {
-        break;
+        continue;
       }
+
+      // No more suffixes
+      break;
     }
 
     return expr;
@@ -2086,21 +2130,7 @@ export class KPLParser {
 
     if (this.match(TokenType.IDENTIFIER)) {
       const name = this.previous!.lexeme;
-      if (this.check(TokenType.LEFT_PAREN)) {
-        // Function call
-        const args = this.parseArgList();
-        return {
-          type: "CallExpression",
-          callee: {
-            type: "IdentifierExpression",
-            name,
-            position: startPosition,
-          },
-          arguments: args,
-          position: startPosition,
-        };
-      }
-      // Simple identifier
+      // Don't automatically parse ArgList here
       return {
         type: "IdentifierExpression",
         name,
