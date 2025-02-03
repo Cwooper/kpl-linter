@@ -1,6 +1,6 @@
 // AST Types for KPL Parser
 
-import { Token, TokenType } from "./tokens";
+import { Token } from "./tokens";
 
 // Base position information for VSCode integration
 export interface Position {
