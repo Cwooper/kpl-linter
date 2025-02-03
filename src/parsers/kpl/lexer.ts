@@ -1,4 +1,5 @@
-import { Token, TokenType, TokenUtils, KEYWORDS } from "./types/tokens";
+import { Token, TokenType, KEYWORDS } from "./types/tokens";
+import { TokenUtils } from "./token-utils";
 
 export class TokenizerError extends Error {
   constructor(
@@ -36,8 +37,6 @@ export class Lexer {
       } catch (error) {
         if (error instanceof TokenizerError) {
           this.errors.push(error);
-          // Skip to next token boundary for error recovery
-          this.synchronize();
         } else {
           throw error;
         }
@@ -81,8 +80,9 @@ export class Lexer {
         this.addToken(TokenType.COLON);
         break;
       case ";":
-        this.addToken(TokenType.SEMI_COLON);
-        break;
+        throw this.error(
+          "The semi-colon is not used in the KPL programming language"
+        );
 
       // Two-character operators
       case "=":
@@ -391,16 +391,6 @@ export class Lexer {
     if (existing) return existing;
     this.stringTable.set(str, str);
     return str;
-  }
-
-  private synchronize(): void {
-    while (!this.isAtEnd()) {
-      if (this.peek() === ";" || this.peek() === "\n") {
-        this.advance();
-        return;
-      }
-      this.advance();
-    }
   }
 
   // Public methods for error handling
