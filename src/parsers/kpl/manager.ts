@@ -9,7 +9,7 @@ import {
   languages,
   DiagnosticCollection,
 } from "vscode";
-import { Tokenizer, TokenizerError } from "./tokenizer";
+import { Lexer, TokenizerError } from "./lexer";
 // import { KPLParser, ParseError } from "./parser"; // TODO
 
 interface FileCache {
@@ -43,7 +43,7 @@ export class KPLManager {
 
     try {
       // Start tokenization
-      const tokenizer = new Tokenizer(textContent, uri);
+      const tokenizer = new Lexer(textContent);
       const tokens = tokenizer.tokenize();
       console.log(tokens)
       cacheEntry.tokens = tokens;

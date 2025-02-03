@@ -15,6 +15,7 @@ export enum TokenType {
   // Special tokens
   EOF = "EOF",
   ID = "ID",
+  COMMENT = "COMMENT",
   INT_CONST = "INT_CONST",
   DOUBLE_CONST = "DOUBLE_CONST",
   CHAR_CONST = "CHAR_CONST",
@@ -323,6 +324,33 @@ export const KEYWORDS: Record<string, TokenType> = {
   while: TokenType.WHILE,
 };
 
+// Operator mapping for lexer
+const OPERATORS = new Map<string, TokenType>([
+  ["+", TokenType.PLUS],
+  ["-", TokenType.MINUS],
+  ["*", TokenType.STAR],
+  ["/", TokenType.SLASH],
+  ["%", TokenType.PERCENT],
+  ["|", TokenType.BAR],
+  ["^", TokenType.CARET],
+  ["&", TokenType.AMP],
+  ["||", TokenType.BAR_BAR],
+  ["&&", TokenType.AMP_AMP],
+  ["==", TokenType.EQUAL_EQUAL],
+  ["!=", TokenType.NOT_EQUAL],
+  ["<", TokenType.LESS],
+  ["<=", TokenType.LESS_EQUAL],
+  [">", TokenType.GREATER],
+  [">=", TokenType.GREATER_EQUAL],
+  ["<<", TokenType.LESS_LESS],
+  [">>", TokenType.GREATER_GREATER],
+  [">>>", TokenType.GREATER_GREATER_GREATER],
+  // Unary operators
+  ["!", TokenType.UNARY_BANG],
+  ["~", TokenType.UNARY_STAR],
+  ["&", TokenType.UNARY_AMP],
+]);
+
 // Helper functions for token manipulation
 export class TokenUtils {
   /**
@@ -358,6 +386,13 @@ export class TokenUtils {
    */
   static getKeywordType(word: string): TokenType | undefined {
     return KEYWORDS[word];
+  }
+
+  /**
+   * Gets the token type for a given operator string
+   */
+  static getOperatorType(text: string): TokenType | undefined {
+    return OPERATORS.get(text);
   }
 
   /**
